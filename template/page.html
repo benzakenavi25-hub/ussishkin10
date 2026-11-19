@@ -6,7 +6,7 @@
 <title>{{title}}</title>
 {{robots}}
 <meta name="description" content="{{description}}">
-<meta name="theme-color" content="#121210">
+<meta name="theme-color" content="#1E1915">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="he_IL">
 <meta property="og:url" content="{{url}}">
@@ -24,14 +24,16 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 {{preload}}
-<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600&family=Cormorant+Garamond:wght@300&family=Frank+Ruhl+Libre:wght@300;400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@200;300;400&family=Cormorant+Garamond:wght@300;400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/styles.css?v={{v}}">
-<script>document.documentElement.classList.add('js');if(matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.classList.add('rm');</script>
+<script>(function(r){r.classList.add('js');var rm=matchMedia('(prefers-reduced-motion: reduce)').matches;if(rm)r.classList.add('rm');try{if(!rm&&!sessionStorage.getItem('intro-seen'))r.classList.add('has-intro')}catch(e){}})(document.documentElement);</script>
 </head>
 <body>
 <a class="skip" href="#visit">דלגו לתיאום ביקור</a>
 <div class="wash" aria-hidden="true"></div>
+<div class="rings" aria-hidden="true"></div>
 <div class="grain" aria-hidden="true"></div>
+{{section_intro}}
 <div class="progress" aria-hidden="true"><i></i></div>
 <header class="topbar">
   <a class="brand" href="#hero">{{brand}}</a>
@@ -39,8 +41,8 @@
 </header>
 <main>
 {{section_hero}}
-{{section_signature}}
 {{section_story}}
+{{section_details}}
 {{section_oneLevel}}
 {{section_price}}
 {{section_facts}}

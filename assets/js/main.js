@@ -1,4 +1,4 @@
-/* Listing template · motion: photo push-in · text reveal · pinned scrubbed sequences · price odometer. */
+/* Listing template · motion: intro · hero → card → view · framed reveals · pinned story / strip · price odometer + rings. */
 (() => {
   'use strict';
   const $ = (s, r = document) => r.querySelector(s);
@@ -6,33 +6,58 @@
   const root = document.documentElement;
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const hasGsap = !!(window.gsap && window.ScrollTrigger);
-  if (!hasGsap) root.classList.add('rm');            // CDN failed: show everything statically
-  const portrait = () => innerWidth / innerHeight < 1;
+  if (!hasGsap) { root.classList.add('rm'); root.classList.remove('has-intro'); }   // CDN failed: show everything statically
+  const clamp01 = v => v < 0 ? 0 : v > 1 ? 1 : v;
+  const smooth = t => t * t * (3 - 2 * t);
 
   /* ---------------- deferred photos: load a section's photos when it is ~1.5 screens away ---------------- */
   const deferred = $$('img[data-src]');
-  const loadImg = im => { if (im.dataset.srcset) im.srcset = im.dataset.srcset; im.src = im.dataset.src; im.removeAttribute('data-src'); im.removeAttribute('data-srcset'); };
+  const loadImg = im => { if (!im.dataset.src) return; if (im.dataset.srcset) im.srcset = im.dataset.srcset; im.src = im.dataset.src; im.removeAttribute('data-src'); im.removeAttribute('data-srcset'); };
+  const inHero = deferred.filter(im => im.closest('#hero'));
+  const rest = deferred.filter(im => !im.closest('#hero'));
   if ('IntersectionObserver' in window) {
     const io = new IntersectionObserver(es => es.forEach(e => {
       if (!e.isIntersecting) return;
       $$('img[data-src]', e.target).forEach(loadImg); io.unobserve(e.target);
     }), { rootMargin: '0px 0px 150% 0px' });
-    new Set(deferred.map(im => im.closest('section') || im.parentElement)).forEach(s => io.observe(s));
-  } else deferred.forEach(loadImg);
+    new Set(rest.map(im => im.closest('section') || im.parentElement)).forEach(s => io.observe(s));
+  } else rest.forEach(loadImg);
+  // the view photo shares the first screen with the hero: fetch it only after the hero is in
+  const loadHeroRest = () => inHero.forEach(loadImg);
+  if (document.readyState === 'complete') loadHeroRest(); else addEventListener('load', loadHeroRest, { once: true });
+  addEventListener('scroll', loadHeroRest, { once: true, passive: true });
+  setTimeout(loadHeroRest, 2500);
+
+  /* ---------------- English words never cut off: scale to fit the width ---------------- */
+  function fitAll() {
+    $$('.fit').forEach(el => {
+      el.style.fontSize = '';
+      const box = el.parentElement.clientWidth, w = el.scrollWidth;
+      if (box > 0 && w > box) el.style.fontSize = (parseFloat(getComputedStyle(el).fontSize) * box / w * 0.98).toFixed(1) + 'px';
+    });
+  }
+  fitAll();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitAll);
 
   /* ---------------- lightbox (works with or without GSAP) ---------------- */
   let lenis = null;
   initGallery();
 
-  /* ---------------- top bar + progress + wash (plain scroll listeners: cheap) ---------------- */
-  const bar = $('.topbar'), prog = $('.progress i'), hero = $('#hero'), facts = $('#facts');
+  /* ---------------- top bar · progress · light wash · rings parallax (plain scroll listeners: cheap) ---------------- */
+  const bar = $('.topbar'), prog = $('.progress i'), hero = $('#hero'), facts = $('#facts'), ringsEl = $('.rings');
   let lastY = scrollY;
+  const sizeRings = () => {
+    if (!ringsEl) return;
+    const max = Math.max(0, root.scrollHeight - innerHeight);
+    ringsEl.style.height = Math.ceil(innerHeight + max * 0.1 + 2) + 'px';
+  };
   function onScroll() {
-    const y = scrollY, max = document.documentElement.scrollHeight - innerHeight;
+    const y = scrollY, max = root.scrollHeight - innerHeight;
     prog.style.transform = `scaleX(${max > 0 ? Math.min(1, y / max) : 0})`;
+    if (ringsEl && !reduce) ringsEl.style.transform = `translate3d(0, ${(-y * 0.1).toFixed(1)}px, 0)`;
     const pastHero = hero ? y > heroEnd() - 60 : true;
     bar.classList.toggle('is-solid', pastHero);
-    if (Math.abs(y - lastY) > 6) { bar.classList.toggle('is-up', y > lastY && y > 120); lastY = y; }
+    if (Math.abs(y - lastY) > 6) { bar.classList.toggle('is-up', y > lastY && y > 120 && pastHero); lastY = y; }
     if (facts) {
       // light section: crossfade in over its first ~30%, back out over its last ~25%
       const r = facts.getBoundingClientRect(), h = innerHeight;
@@ -43,35 +68,37 @@
     }
     updatePill();
   }
-  const clamp01 = v => v < 0 ? 0 : v > 1 ? 1 : v;
-  const smooth = t => t * t * (3 - 2 * t);
   const heroEnd = () => { const sp = hero.parentElement.classList.contains('pin-spacer') ? hero.parentElement : hero; return sp.offsetTop + sp.offsetHeight - innerHeight; };
 
-  /* ---------------- floating pill ---------------- */
+  /* ---------------- floating pill: never in pinned sequences, never on a headline or a framed photo's centre ---------------- */
   const pill = $('.pill');
-  const noPillZones = ['#hero', '#signature', '#story', '#onelevel'].map(s => $(s)).filter(Boolean);
+  const noPillZones = ['#hero', '#story', '#onelevel'].map(s => $(s)).filter(Boolean);
   const visit = $('#visit');
-  const guard = $$('h2, .story-line, .sig-text, .price-num, .price-sub, .extras, .loc-line, .text-link');
+  const guard = $$('.sh, .story-line, .price-sub, .extras, .loc-line, .text-link, .detail-line, .ol-sub');
+  const frames = $$('.frame').filter(f => !f.closest('#story, #onelevel'));
   let pillHidden = true;
   function updatePill() {
     if (!pill) return;
-    const h = innerHeight;
+    const h = innerHeight, vw = innerWidth;
     let hide = false;
-    // hero not finished, or a pinned / full-screen sequence is on screen
     for (const el of noPillZones) {
       const box = el.parentElement.classList.contains('pin-spacer') ? el.parentElement : el;
       const r = box.getBoundingClientRect();
-      if (r.top < h * 0.5 && r.bottom > h * 0.5) { hide = true; break; }
+      if (r.top < h * 0.6 && r.bottom > h * 0.4) { hide = true; break; }
       if (el.id === 'hero' && r.bottom > h * 0.25) { hide = true; break; }
     }
     if (!hide && visit && visit.getBoundingClientRect().top < h) hide = true;
-    if (!hide && !$('.lightbox[hidden]') && $('.lightbox')) hide = true;
+    if (!hide && $('.lightbox') && !$('.lightbox[hidden]')) hide = true;
     if (!hide) {
-      // never on top of a headline or a key line
-      const zoneTop = h - 20 - 44 - 16, half = 130, mid = innerWidth / 2;
+      const zoneTop = h - 20 - 44 - 16, half = 130, mid = vw / 2;
       hide = guard.some(el => {
         const r = el.getBoundingClientRect();
         return r.height && r.bottom > zoneTop && r.top < h && r.left < mid + half && r.right > mid - half;
+      }) || frames.some(el => {
+        const r = el.getBoundingClientRect();
+        if (!r.height || r.right < 0 || r.left > vw) return false;
+        const cy = (r.top + r.bottom) / 2, band = Math.min(120, r.height * 0.3);
+        return cy + band > zoneTop && cy - band < h;
       });
     }
     if (hide !== pillHidden) { pillHidden = hide; pill.classList.toggle('is-hidden', hide); }
@@ -84,8 +111,8 @@
   if (!hasGsap || reduce) {
     digits.forEach(pd => setDigit(pd, +pd.dataset.d));
     addEventListener('scroll', onScroll, { passive: true });
-    addEventListener('resize', onScroll);
-    onScroll();
+    addEventListener('resize', () => { fitAll(); sizeRings(); onScroll(); });
+    sizeRings(); onScroll();
     if (hasGsap) simpleFades();
     return;
   }
@@ -107,121 +134,187 @@
   }
   addEventListener('scroll', onScroll, { passive: true });
 
-  /* ---------------- text reveals ---------------- */
-  function lines(el, delay = 0) {
-    return gsap.to($$('.ln > span', el), { y: 0, yPercent: 0, duration: 0.9, stagger: 0.08, delay, ease: 'power3.out' });
+  /* ---------------- element 1: header reveal (label, headline lines, hairline from the right) ---------------- */
+  function revealHead(sh) {
+    const tl = gsap.timeline(), lab = $('.sh-label', sh), lns = $$('.ln > span', sh), rule = $('.sh-rule', sh);
+    if (lab) tl.fromTo(lab, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.7 }, 0);
+    if (lns.length) tl.fromTo(lns, { yPercent: 105, y: 0 }, { yPercent: 0, duration: 0.9, stagger: 0.08 }, 0.1);
+    if (rule) tl.fromTo(rule, { scaleX: 0 }, { scaleX: 1, duration: 0.8, ease: 'power2.inOut' }, 0.25);
+    return tl;
   }
-  const fadeIn = (el, delay = 0) => gsap.fromTo(el, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.7, delay });
-  // standalone reveals (not inside pinned sequences, which drive their own)
-  $$('[data-lines]').filter(el => !el.closest('.signature')).forEach(el => {
-    gsap.set($$('.ln > span', el), { yPercent: 105, y: 0 });
-    ScrollTrigger.create({ trigger: el, start: 'top 86%', once: true, onEnter: () => lines(el) });
+  $$('.sh').filter(sh => !sh.closest('#hero')).forEach(sh => {
+    ScrollTrigger.create({ trigger: sh, start: 'top 86%', once: true, onEnter: () => revealHead(sh) });
   });
-  $$('[data-fade]').filter(el => !el.closest('.signature')).forEach(el => {
+  const fadeIn = (el, delay = 0) => gsap.fromTo(el, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.7, delay });
+  $$('[data-fade]').forEach(el => {
     ScrollTrigger.create({ trigger: el, start: 'top 90%', once: true, onEnter: () => fadeIn(el, el.matches('.slot') ? 0.06 * $$('.slot').indexOf(el) : 0.08) });
   });
 
-
-  /* ---------------- 7.1 hero: intro, then the shrink ---------------- */
-  if (hero) {
-    const card = $('.hero-card'), himg = $('.hero-img'), title = $('.hero-title'), label = $('.hero-label'), hint = $('.hero-hint'), shade = $('.hero-shade');
-    gsap.set($$('.ln > span', title), { yPercent: 105, y: 0 });
-    const intro = gsap.timeline({ paused: true, onComplete: () => title.classList.add('is-open') })
-      .fromTo(himg, { scale: 1.12 }, { scale: 1, duration: 1.4, ease: 'power3.out' }, 0)
-      .to($$('.ln > span', title), { yPercent: 0, y: 0, duration: 0.9, stagger: 0.08 }, 0.35)
-      .fromTo($('.in', label), { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.7 }, 0.85)
-      .fromTo($('.in', hint), { opacity: 0 }, { opacity: 0.8, duration: 0.6 }, 1.2);
-    const go = () => intro.play();
-    if (himg.complete) requestAnimationFrame(go); else { himg.addEventListener('load', go, { once: true }); setTimeout(go, 1600); }
-
-    // shrink: full-bleed → centred card (~82% × 62%), title rises and scales to ~55%
-    const cardInset = () => {
-      const w = innerWidth, h = innerHeight;
-      const x = Math.round(w * (w >= 900 ? 0.14 : 0.09)), y = Math.round(h * 0.19);
-      return { x, y };
-    };
-    const titleTarget = () => {
-      // title's right edge on the card's right edge, sitting just above the card
-      const { x, y } = cardInset();
-      const r = title.getBoundingClientRect(), s = 0.55;
-      const right = innerWidth - r.right;           // current gap to the right edge
-      return { x: -(x - right), y: (y - 14 - r.height * s) - r.top, s };
-    };
-    const tl = gsap.timeline({
-      defaults: { ease: 'none' },
-      scrollTrigger: { trigger: hero, start: 'top top', end: () => '+=' + Math.round(innerHeight * 1.2), pin: true, scrub: 0.6, invalidateOnRefresh: true, anticipatePin: 1 }
-    });
-    tl.fromTo(card, { clipPath: 'inset(0px 0px 0px 0px round 0px)' }, { clipPath: () => { const { x, y } = cardInset(); return `inset(${y}px ${x}px ${y}px ${x}px round 4px)`; }, duration: 1 }, 0)
-      .fromTo(himg, { scale: 1 }, { scale: 0.94, duration: 1, immediateRender: false }, 0)
-      .to(shade, { opacity: 0.35, duration: 0.6 }, 0)
-      .fromTo([label, hint], { opacity: 1 }, { opacity: 0, duration: 0.25 }, 0)
-      .to(title, { x: () => titleTarget().x, y: () => titleTarget().y, scale: 0.55, duration: 1 }, 0)
-      .to({}, { duration: 0.18 });
+  /* ---------------- element 2: the frame draws (top-right, counter-clockwise), then the photo rises in ---------------- */
+  const edges = el => ['t', 'l', 'b', 'r'].map(k => $('.fr-' + k, el));
+  function hideFrame(el, inner) {
+    const [t, l, b, r] = edges(el);
+    gsap.set([t, b], { scaleX: 0 }); gsap.set([l, r], { scaleY: 0 });
+    if (inner) gsap.set(inner, { clipPath: 'inset(100% 0% 0% 0%)' });
   }
-
-  /* ---------------- photo push-in (non-pinned full-bleed photos) ---------------- */
-  $$('.push').forEach(img => {
-    gsap.fromTo(img, { scale: 1 }, { scale: 1.06, ease: 'none', scrollTrigger: { trigger: img.parentElement, start: 'top bottom', end: 'bottom top', scrub: true } });
+  // constant drawing speed: each edge's share of the time follows its length
+  function drawFrame(tl, el, at, dur, w, h) {
+    const [t, l, b, r] = edges(el), per = dur / (2 * (w + h));
+    tl.fromTo(t, { scaleX: 0 }, { scaleX: 1, duration: w * per, ease: 'none' }, at)
+      .fromTo(l, { scaleY: 0 }, { scaleY: 1, duration: h * per, ease: 'none' }, at + w * per)
+      .fromTo(b, { scaleX: 0 }, { scaleX: 1, duration: w * per, ease: 'none' }, at + (w + h) * per)
+      .fromTo(r, { scaleY: 0 }, { scaleY: 1, duration: h * per, ease: 'none' }, at + (2 * w + h) * per);
+    return tl;
+  }
+  const risePhoto = (tl, inner, at, dur) => tl.fromTo(inner, { clipPath: 'inset(100% 0% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: dur, ease: 'power2.inOut' }, at);
+  $$('.frame[data-reveal]').forEach(fr => {
+    const inner = $('.frame-in', fr), im = $('img', fr);
+    ScrollTrigger.create({ trigger: fr, start: 'top 80%', once: true, onEnter: () => {
+      const tl = gsap.timeline();
+      drawFrame(tl, fr, 0, 0.9, fr.offsetWidth, fr.offsetHeight);
+      risePhoto(tl, inner, 0.9, 0.9);
+    } });
+    // slow push-in while it stays in view
+    gsap.fromTo(im, { scale: 1 }, { scale: 1.05, ease: 'none', scrollTrigger: { trigger: fr, start: 'top 80%', end: 'bottom top', scrub: true } });
   });
 
-  /* ---------------- 7.2 signature: pan (portrait) or push-in (landscape), line reveals ---------------- */
-  const sig = $('#signature');
-  if (sig) {
-    const simg = $('.sig-img', sig), stitle = $('.sig-title', sig), ssub = $('.sig-sub', sig);
-    gsap.set($$('.ln > span', stitle), { yPercent: 105, y: 0 });
-    if (ssub) gsap.set(ssub, { opacity: 0, y: 14 });
-    // created inline (not in a matchMedia callback) so pins register in page order; portrait vs landscape is resolved on every refresh
+  /* ---------------- signature moments: intro, then hero → card → the view ---------------- */
+  if (hero) {
+    const clip = $('.hero-clip', hero), himg = $('.hero-img', hero), hshade = $('.hero-shade', hero);
+    const hhead = $('.hero-head', hero), hint = $('.hero-hint', hero), hframe = $('.hero-frame', hero);
+    const view = $('.view', hero), vimg = $('.view-img', hero), vshade = $('.view-shade', hero), vsub = $('.view-sub', hero);
+    const vsh = view && $('.view-text .sh', view);
+
+    // the card: framed, centred under the title (4:5 on phones, the photo's ratio on wide screens)
+    const rect = () => {
+      const vw = innerWidth, vh = innerHeight, wide = vw >= 900 && vw > vh;
+      const top = hhead.offsetTop + hhead.offsetHeight + (wide ? 36 : 30);
+      const avail = vh - top - (wide ? 56 : 44);
+      let w = wide ? Math.min(vw * 0.52, 980) : vw - 48;
+      let h = wide ? w * 1000 / 1622 : w * 5 / 4;
+      if (h > avail) { h = avail; w = wide ? h * 1622 / 1000 : Math.min(w, h * 4 / 5); }
+      return { x: (vw - w) / 2, y: top + (avail - h) / 2, w, h };
+    };
+    // the photo shrinks with the card (around the card's centre) but always still covers it
+    const imgScale = () => {
+      const r = rect(), vw = innerWidth, vh = innerHeight, cy = r.y + r.h / 2;
+      return Math.min(1, Math.max(r.w / vw, r.h / 2 / cy, r.h / 2 / (vh - cy)) * 1.04);
+    };
+    const place = () => {
+      const r = rect();
+      gsap.set(hframe, { left: r.x - 10, top: r.y - 10, width: r.w + 20, height: r.h + 20 });
+      gsap.set(himg, { transformOrigin: `${innerWidth / 2}px ${r.y + r.h / 2}px` });
+    };
+    place();
+    ScrollTrigger.addEventListener('refreshInit', place);
+    hideFrame(hframe);
+
+    const entrance = () => {
+      const t = gsap.timeline();
+      t.fromTo(himg, { scale: 1.08 }, { scale: 1, duration: 1.6, ease: 'power3.out' }, 0)
+        .add(revealHead($('.sh', hhead)), 0.2)
+        .fromTo(hint, { opacity: 0 }, { opacity: 0.85, duration: 0.6 }, 1.1);
+    };
+
+    const intro = $('div.intro');
+    if (root.classList.contains('has-intro') && intro) {
+      try { sessionStorage.setItem('intro-seen', '1'); } catch (e) { /* private mode */ }
+      intro.style.animation = 'none';
+      let done = false;
+      const evs = ['wheel', 'touchmove', 'keydown'];
+      const skip = () => itl.timeScale(5);
+      const end = () => { if (done) return; done = true; evs.forEach(e => removeEventListener(e, skip)); root.classList.remove('has-intro'); intro.remove(); };
+      const itl = gsap.timeline({ onComplete: end })
+        .fromTo($('.intro-line', intro), { scaleX: 0 }, { scaleX: 1, duration: 0.5, ease: 'power2.inOut' }, 0)
+        .fromTo($$('.ic', intro), { yPercent: 110, y: 0 }, { yPercent: 0, duration: 0.55, stagger: 0.04, ease: 'power3.out' }, 0.3)
+        .fromTo($('.intro-label', intro), { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.45 }, 0.7)
+        .call(entrance, null, 1.15)
+        .to(intro, { opacity: 0, duration: 0.45, ease: 'power2.inOut' }, 1.15);
+      evs.forEach(e => addEventListener(e, skip, { passive: true }));
+    } else {
+      if (intro) intro.remove();
+      if (himg.complete) requestAnimationFrame(entrance); else { let go = false; const f = () => { if (!go) { go = true; entrance(); } }; himg.addEventListener('load', f, { once: true }); setTimeout(f, 1200); }
+    }
+
+    const fr = edges(hframe);
+    const G = 1.3;   // when the card starts growing back
     const tl = gsap.timeline({
       defaults: { ease: 'none' },
-      scrollTrigger: { trigger: sig, start: 'top top', end: () => '+=' + Math.round(innerHeight * 1.5), pin: true, scrub: 0.6, invalidateOnRefresh: true, anticipatePin: 1 }
+      scrollTrigger: { trigger: hero, start: 'top top', end: () => '+=' + Math.round(innerHeight * 3.4), pin: true, scrub: 0.6, invalidateOnRefresh: true, anticipatePin: 1 }
     });
-    // portrait: pan the panorama right → left · landscape: slow push-in
-    tl.fromTo(simg, { x: 0, scale: 1 }, { x: () => portrait() ? Math.max(0, simg.offsetWidth - innerWidth) : 0, scale: () => portrait() ? 1 : 1.06, duration: 1 }, 0)
-      .to($$('.ln > span', stitle), { yPercent: 0, y: 0, duration: 0.14, stagger: 0.03, ease: 'power3.out' }, 0.32);
-    if (ssub) tl.to(ssub, { opacity: 0.86, y: 0, duration: 0.12, ease: 'power3.out' }, 0.5);
+    // 1 · full-bleed → framed card; the title stays above it
+    tl.fromTo(clip, { clipPath: 'inset(0px 0px 0px 0px)' }, { clipPath: () => { const r = rect(); return `inset(${r.y}px ${r.x}px ${innerHeight - r.y - r.h}px ${r.x}px)`; }, duration: 1, ease: 'power1.inOut' }, 0)
+      .fromTo(himg, { scale: 1 }, { scale: () => imgScale(), duration: 1, ease: 'power1.inOut', immediateRender: false }, 0)
+      .to(hint, { opacity: 0, duration: 0.2 }, 0)
+      .to(hshade, { opacity: 0.2, duration: 0.8 }, 0)
+      .set(hframe, { opacity: 1 }, 0.45)
+      .fromTo(fr[0], { scaleX: 0 }, { scaleX: 1, duration: 0.13 }, 0.45)
+      .fromTo(fr[1], { scaleY: 0 }, { scaleY: 1, duration: 0.17 }, 0.58)
+      .fromTo(fr[2], { scaleX: 0 }, { scaleX: 1, duration: 0.13 }, 0.75)
+      .fromTo(fr[3], { scaleY: 0 }, { scaleY: 1, duration: 0.17 }, 0.88)
+    // 2 · back to full screen; 27 crossfades into 28 (you stood up and looked out)
+      .to(hframe, { opacity: 0, duration: 0.2 }, G)
+      .to(hhead, { opacity: 0, y: -40, duration: 0.4 }, G)
+      .to(clip, { clipPath: 'inset(0px 0px 0px 0px)', duration: 1, ease: 'power1.inOut' }, G)
+      .to(himg, { scale: 1.04, duration: 1, ease: 'power1.inOut' }, G);
+    if (view) {
+      // 3 · the view: pan right → left over the treetops, headline at the bottom
+      tl.fromTo(view, { opacity: 0 }, { opacity: 1, duration: 0.7 }, G + 0.15)
+        .fromTo(vimg, { x: 0 }, { x: () => Math.max(0, vimg.offsetWidth - innerWidth), duration: 2.3 }, G + 0.1)
+        .fromTo(vshade, { opacity: 0 }, { opacity: 1, duration: 0.4 }, G + 0.85);
+      if (vsh) {
+        const lab = $('.sh-label', vsh), lns = $$('.ln > span', vsh), rule = $('.sh-rule', vsh);
+        tl.fromTo(lab, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.25, ease: 'power2.out' }, G + 0.95)
+          .fromTo(lns, { yPercent: 105, y: 0 }, { yPercent: 0, duration: 0.3, stagger: 0.06, ease: 'power3.out' }, G + 1.0)
+          .fromTo(rule, { scaleX: 0 }, { scaleX: 1, duration: 0.3, ease: 'power2.inOut' }, G + 1.15);
+      }
+      if (vsub) tl.fromTo(vsub, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' }, G + 1.3);
+    }
+    tl.to({}, { duration: 0.25 }, G + 2.4);
   }
 
-  /* ---------------- 7.3 story: pinned stack, clip-path wipe from the bottom ---------------- */
+  /* ---------------- the home: pinned; the framed photo rises away while the next frame draws ---------------- */
   const story = $('#story');
   if (story) {
     const items = $$('.story-item', story), now = $('.story-now', story), n = items.length;
-    const parts = items.map(it => ({ it, img: $('.story-img', it), ghost: $('.ghost', it), line: $('.story-line', it) }));
+    const parts = items.map(it => ({ it, word: $('.story-word', it), fr: $('.frame', it), inner: $('.frame-in', it), img: $('.frame-in img', it), line: $('.story-line', it) }));
+    parts.forEach(p => { hideFrame(p.fr, p.inner); gsap.set([p.word, p.line], { opacity: 0, y: 30 }); });
     let cur = -1;
     const setNow = i => { if (i !== cur) { cur = i; now.textContent = String(i + 1).padStart(2, '0'); } };
-    const HOLD = 0.6, WIPE = 1;
-    const total = HOLD + (n - 1) * (WIPE + HOLD);
+    const HOLD = 0.6, TRANS = 1.3, STEP = TRANS + HOLD;
+    const total = HOLD + (n - 1) * STEP + 0.3;
     const tl = gsap.timeline({
       defaults: { ease: 'none' },
       scrollTrigger: {
-        trigger: story, start: 'top top', end: () => '+=' + Math.round(innerHeight * total), pin: true, scrub: 0.6, invalidateOnRefresh: true, anticipatePin: 1,
-        onUpdate: s => { const u = s.progress * total; setNow(Math.min(n - 1, Math.max(0, Math.floor((u - HOLD - WIPE * 0.5) / (WIPE + HOLD)) + 1))); }
+        trigger: story, start: 'top top', end: () => '+=' + Math.round(innerHeight * total * 0.75), pin: true, scrub: 0.6, invalidateOnRefresh: true, anticipatePin: 1,
+        onUpdate: s => { const u = s.progress * total; setNow(Math.min(n - 1, Math.max(0, Math.floor((u - HOLD - TRANS * 0.5) / STEP) + 1))); }
       }
     });
-    // first item: words rise in as the section arrives (not scrubbed: it's the entrance)
-    gsap.set([parts[0].ghost, parts[0].line], { opacity: 0, y: 30 });
-    ScrollTrigger.create({ trigger: story, start: 'top 60%', once: true, onEnter: () => {
-      gsap.to(parts[0].ghost, { opacity: 1, y: 0, duration: 1.1 });
-      gsap.to(parts[0].line, { opacity: 1, y: 0, duration: 0.8, delay: 0.15 });
+    // first item: arrives as the section comes in (time-based: it's the entrance)
+    ScrollTrigger.create({ trigger: story, start: 'top 55%', once: true, onEnter: () => {
+      const p = parts[0], t = gsap.timeline();
+      t.to(p.word, { opacity: 1, y: 0, duration: 0.9 }, 0);
+      drawFrame(t, p.fr, 0.15, 0.9, p.fr.offsetWidth, p.fr.offsetHeight);
+      risePhoto(t, p.inner, 1.0, 0.9);
+      t.to(p.line, { opacity: 1, y: 0, duration: 0.7 }, 1.3);
     } });
     parts.forEach((p, i) => {
-      const t0 = i === 0 ? 0 : HOLD + (i - 1) * (WIPE + HOLD);           // when this item starts entering
-      const life = (i === 0 ? HOLD : WIPE + HOLD) + (i < n - 1 ? WIPE : 0);
-      // subtle drift: ≤ 8% of width over the item's time on screen
-      tl.fromTo(p.img, { xPercent: 3.5 }, { xPercent: -3.5, duration: life }, t0);
+      const t0 = i === 0 ? 0 : HOLD + (i - 1) * STEP;
+      tl.fromTo(p.img, { scale: 1 }, { scale: 1.05, duration: (i === 0 ? HOLD : STEP) + (i < n - 1 ? TRANS * 0.5 : 0.3) }, t0);
       if (i === 0) return;
-      tl.fromTo(p.it, { clipPath: 'inset(100% 0% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: WIPE, ease: 'power1.inOut' }, t0)
-        .to(parts[i - 1].ghost, { yPercent: -60, opacity: 0, duration: WIPE * 0.6 }, t0)
-        .to(parts[i - 1].line, { opacity: 0, y: -20, duration: WIPE * 0.4 }, t0)
-        .fromTo(p.ghost, { yPercent: 60, opacity: 0 }, { yPercent: 0, opacity: 1, duration: WIPE * 0.6 }, t0 + WIPE * 0.4)
-        .fromTo(p.line, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: WIPE * 0.35 }, t0 + WIPE * 0.62);
+      tl.to(parts[i - 1].it, { y: -90, opacity: 0, duration: 0.55, ease: 'power1.in' }, t0)
+        .fromTo(p.word, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.45, ease: 'power2.out' }, t0 + 0.35);
+      drawFrame(tl, p.fr, t0 + 0.25, 0.6, p.fr.offsetWidth || 1, p.fr.offsetHeight || 1);
+      risePhoto(tl, p.inner, t0 + 0.7, 0.55);
+      tl.fromTo(p.line, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out' }, t0 + 0.95);
     });
-    tl.to({}, { duration: HOLD * 0.5 });
+    tl.to({}, { duration: 0.3 }, total - 0.3);
   }
 
-  /* ---------------- 7.4 one level: pinned horizontal strip ---------------- */
+  /* ---------------- one level: pinned horizontal strip of framed photos ---------------- */
   const ol = $('#onelevel');
   if (ol) {
-    const strip = $('.ol-strip', ol), fill = $('.ol-fill', ol), labs = $$('.ol-label', ol), head = $('.ol-head', ol);
+    const strip = $('.ol-strip', ol), fill = $('.ol-fill', ol), labs = $$('.ol-label', ol);
     const dist = () => Math.max(0, strip.scrollWidth - strip.parentElement.clientWidth);
     let on = 0;
     const tl = gsap.timeline({
@@ -234,32 +327,31 @@
         }
       }
     });
-    // RTL: kitchen starts on the right; the strip moves right to bring the next rooms in from the left
+    // RTL: the first room starts on the right; the strip moves right to bring the next rooms in from the left
     tl.to({}, { duration: 0.12 })
       .fromTo(strip, { x: 0 }, { x: () => dist(), duration: 0.8 }, 0.12)
       .fromTo(fill, { scaleX: 1 / labs.length }, { scaleX: 1, duration: 0.8 }, 0.12)
       .to({}, { duration: 0.08 });
-    $$('.ol-item img', ol).forEach(img => tl.fromTo(img, { scale: 1.06 }, { scale: 1, duration: 1 }, 0));
+    $$('.ol-item img', ol).forEach(img => tl.fromTo(img, { scale: 1.05 }, { scale: 1, duration: 1 }, 0));
   }
 
-  /* ---------------- 7.5 price: odometer roll, once ---------------- */
+  /* ---------------- the price: odometer roll + rings drawing in, once ---------------- */
   const price = $('#price');
   if (price) {
-    digits.forEach(pd => setDigit(pd, 0));
+    digits.forEach(pd => { $('.pd-col', pd).style.transform = ''; });
+    const ringPaths = $$('.price-rings path', price);
     ScrollTrigger.create({ trigger: $('.price-num', price), start: 'top 78%', once: true, onEnter: () => {
       const tl = gsap.timeline();
+      tl.to(ringPaths, { strokeDashoffset: 0, duration: 2.4, stagger: 0.07, ease: 'power2.out' }, 0);
       digits.forEach((pd, i) => {
         const d = +pd.dataset.d, col = $('.pd-col', pd);
-        tl.fromTo(col, { yPercent: 0 }, { yPercent: -(10 + d) * 5, duration: 1.2, ease: 'power4.out' }, i * 0.06);
+        tl.fromTo(col, { yPercent: 0 }, { yPercent: -(10 + d) * 5, duration: 1.2, ease: 'power4.out' }, 0.1 + i * 0.06);
       });
-      tl.to($$('.pc', price), { opacity: 1, duration: 0.5, ease: 'power2.out' }, '-=0.35')
-        .fromTo('.price-rule', { scaleX: 0 }, { scaleX: 1, duration: 0.8, ease: 'power3.inOut' }, '-=0.2');
+      tl.to($$('.pc', price), { opacity: 1, duration: 0.5, ease: 'power2.out' }, 0.9);
     } });
-    // odometer columns use yPercent on the column; clear the static transform
-    digits.forEach(pd => { $('.pd-col', pd).style.transform = ''; });
   }
 
-  /* ---------------- 7.6 facts: count up once ---------------- */
+  /* ---------------- in numbers: count up once ---------------- */
   $$('.fact-num').forEach(el => {
     const raw = el.dataset.count, to = parseFloat(raw), dec = (raw.split('.')[1] || '').length;
     if (!isFinite(to)) return;
@@ -269,17 +361,16 @@
   });
 
   /* ---------------- refresh discipline ---------------- */
-  ScrollTrigger.addEventListener('refresh', onScroll);
+  ScrollTrigger.addEventListener('refreshInit', fitAll);
+  ScrollTrigger.addEventListener('refresh', () => { sizeRings(); onScroll(); });
   ScrollTrigger.refresh();
-  onScroll();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => ScrollTrigger.refresh());
   addEventListener('load', () => ScrollTrigger.refresh(), { once: true });
 
   /* ================================================================ */
   function simpleFades() {
     gsap.registerPlugin(ScrollTrigger);
-    $$('[data-fade], [data-lines]').forEach(el => {
-      gsap.set($$('.ln > span', el), { yPercent: 0, y: 0 });
+    $$('[data-fade], [data-lines], .sh').forEach(el => {
       gsap.fromTo(el, { opacity: 0 }, { opacity: 1, duration: 0.6, ease: 'power1.out', scrollTrigger: { trigger: el, start: 'top 92%', once: true } });
     });
   }
@@ -293,7 +384,7 @@
     const slides = $$('.lb-slide', track);
     let idx = 0, opener = null;
     const load = i => { const im = slides[i] && $('img', slides[i]); if (im && !im.src) im.src = im.dataset.src; };
-    const setCount = i => { idx = i; count.textContent = `${i + 1} / ${photos.length}`; load(i - 1); load(i); load(i + 1); };
+    const setCount = i => { idx = i; count.textContent = `${String(i + 1).padStart(2, '0')} / ${String(photos.length).padStart(2, '0')}`; load(i - 1); load(i); load(i + 1); };
     const goTo = (i, smoothScroll = true) => {
       i = Math.max(0, Math.min(photos.length - 1, i));
       slides[i].scrollIntoView({ behavior: smoothScroll && !reduce ? 'smooth' : 'auto', inline: 'center', block: 'nearest' });
@@ -314,16 +405,15 @@
       if (lenis) lenis.stop();
       setCount(i);
       requestAnimationFrame(() => { goTo(i, false); closeBtn.focus(); });
-      updatePillSafe();
+      updatePill();
     };
     const close = () => {
       lb.hidden = true;
       root.classList.remove('lb-open'); document.body.classList.remove('lb-open');
       if (lenis) lenis.start();
       if (opener) opener.focus();
-      updatePillSafe();
+      updatePill();
     };
-    const updatePillSafe = () => updatePill();
     $$('.gal-item', strip).forEach(b => b.addEventListener('click', () => { if (!strip.dataset.dragged) open(+b.dataset.i, b); }));
     closeBtn.addEventListener('click', close);
     $('.lb-prev', lb).addEventListener('click', () => goTo(idx - 1));
@@ -341,7 +431,7 @@
     });
 
     // strip: arrows + mouse drag (touch stays native)
-    const step = () => ($('.gal-item', strip).offsetWidth + 16);
+    const step = () => ($('.gal-item', strip).offsetWidth + 36);
     $$('.gal-arrow').forEach(b => b.addEventListener('click', () => strip.scrollBy({ left: (b.dataset.dir === 'next' ? -1 : 1) * step(), behavior: 'smooth' })));
     let down = null;
     strip.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse') return; down = { x: e.clientX, s: strip.scrollLeft, moved: false }; });
