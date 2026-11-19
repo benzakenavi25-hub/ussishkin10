@@ -1,6 +1,6 @@
 _screens/
 .claude/
-photos/
+/photos/
 _tools/
 node_modules/
 *.md
