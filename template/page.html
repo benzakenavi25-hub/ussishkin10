@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{{title}}</title>
+{{robots}}
+<meta name="description" content="{{description}}">
+<meta name="theme-color" content="#121210">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="he_IL">
+<meta property="og:url" content="{{url}}">
+<meta property="og:title" content="{{title}}">
+<meta property="og:description" content="{{description}}">
+<meta property="og:image" content="{{og}}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{title}}">
+<meta name="twitter:description" content="{{description}}">
+<meta name="twitter:image" content="{{og}}">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+{{preload}}
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600&family=Cormorant+Garamond:wght@300&family=Frank+Ruhl+Libre:wght@300;400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/styles.css?v={{v}}">
+<script>document.documentElement.classList.add('js');if(matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.classList.add('rm');</script>
+</head>
+<body>
+<a class="skip" href="#visit">דלגו לתיאום ביקור</a>
+<div class="wash" aria-hidden="true"></div>
+<div class="grain" aria-hidden="true"></div>
+<div class="progress" aria-hidden="true"><i></i></div>
+<header class="topbar">
+  <a class="brand" href="#hero">{{brand}}</a>
+  <span class="label topbar-sub">{{brandSub}}</span>
+</header>
+<main>
+{{section_hero}}
+{{section_signature}}
+{{section_story}}
+{{section_oneLevel}}
+{{section_price}}
+{{section_facts}}
+{{section_gallery}}
+{{section_location}}
+{{section_visit}}
+{{section_agent}}
+</main>
+{{cta}}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
+<script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js" defer></script>
+<script src="assets/js/main.js?v={{v}}" defer></script>
+</body>
+</html>

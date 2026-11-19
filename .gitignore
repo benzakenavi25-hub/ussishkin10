@@ -4,3 +4,5 @@ photos/
 _tools/
 node_modules/
 *.md
+!README.md
+*.zip

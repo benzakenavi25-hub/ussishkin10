@@ -1,5 +1,4 @@
-/* אוסישקין 10 · "בגובה הצמרות" · v3
-   Motion vocabulary: hero frame opens to the edges · photo push-in · text fade + 12px rise · pinned scroll-scrubbed sequences. */
+/* Listing template · motion: photo push-in · text reveal · pinned scrubbed sequences · price odometer. */
 (() => {
   'use strict';
   const $ = (s, r = document) => r.querySelector(s);
@@ -7,251 +6,364 @@
   const root = document.documentElement;
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const hasGsap = !!(window.gsap && window.ScrollTrigger);
+  if (!hasGsap) root.classList.add('rm');            // CDN failed: show everything statically
+  const portrait = () => innerWidth / innerHeight < 1;
 
-  /* ---------------- WhatsApp: one destination, a ready message; a preferred time is a request, not a booking ---------------- */
-  const WA = 'https://wa.me/972522505966?text=';
-  const BASE = 'היי עמיר, ראיתי את האתר של אוסישקין 10 ואשמח לתאם ביקור בדירה.';
-  $$('.slot, .contact-cta').forEach(a => {
-    const pref = a.dataset.slot;
-    a.href = WA + encodeURIComponent(pref ? BASE + ' זמן מועדף: ' + pref + '.' : BASE);
-  });
+  /* ---------------- deferred photos: load a section's photos when it is ~1.5 screens away ---------------- */
+  const deferred = $$('img[data-src]');
+  const loadImg = im => { if (im.dataset.srcset) im.srcset = im.dataset.srcset; im.src = im.dataset.src; im.removeAttribute('data-src'); im.removeAttribute('data-srcset'); };
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(es => es.forEach(e => {
+      if (!e.isIntersecting) return;
+      $$('img[data-src]', e.target).forEach(loadImg); io.unobserve(e.target);
+    }), { rootMargin: '0px 0px 150% 0px' });
+    new Set(deferred.map(im => im.closest('section') || im.parentElement)).forEach(s => io.observe(s));
+  } else deferred.forEach(loadImg);
 
-  /* ---------------- terrace sound: only if the file exists, never autoplay ---------------- */
-  const soundBtn = $('.sound');
-  if (soundBtn) {
-    const src = 'assets/audio/terrace.m4a';
-    fetch(src, { method: 'HEAD', cache: 'no-store' }).then(r => {
-      const type = r.headers.get('content-type') || '';
-      if (!r.ok || type.includes('text/html')) return;
-      let audio = null;
-      soundBtn.disabled = false; soundBtn.removeAttribute('aria-disabled'); soundBtn.setAttribute('aria-pressed', 'false');
-      soundBtn.addEventListener('click', () => {
-        if (!audio) { audio = new Audio(src); audio.loop = true; }
-        if (audio.paused) { audio.play(); soundBtn.setAttribute('aria-pressed', 'true'); }
-        else { audio.pause(); soundBtn.setAttribute('aria-pressed', 'false'); }
-      });
-    }).catch(() => {});
-  }
-
-  /* ---------------- odometer hours ---------------- */
-  const odos = $$('.hour').map(h => {
-    const from = h.dataset.from, to = h.dataset.time;
-    h.setAttribute('aria-label', to);
-    const wrap = document.createElement('span'); wrap.className = 'odo'; wrap.setAttribute('aria-hidden', 'true');
-    const cols = [];
-    [...to].forEach((ch, i) => {
-      if (ch === ':') { const s = document.createElement('span'); s.className = 'odo-sep'; s.textContent = ':'; wrap.appendChild(s); return; }
-      const d = document.createElement('span'); d.className = 'odo-d';
-      const col = document.createElement('span'); col.className = 'odo-col';
-      col.innerHTML = Array.from({ length: 20 }, (_, k) => `<span>${k % 10}</span>`).join('');
-      d.appendChild(col); wrap.appendChild(d);
-      const a = +from[i], b = +ch;
-      cols.push({ col, a, b: b >= a ? b : b + 10 });
-    });
-    h.textContent = ''; h.appendChild(wrap);
-    return { h, cols };
-  });
-  const setOdo = (o, p) => o.cols.forEach(c => { c.col.style.transform = `translateY(${-(c.a + (c.b - c.a) * p) * 5}%)`; });
-  odos.forEach(o => setOdo(o, reduce || !hasGsap ? 1 : 0));
-
-  if (!hasGsap) return;
-
-  gsap.registerPlugin(ScrollTrigger);
-  ScrollTrigger.config({ ignoreMobileResize: true });
-
-  /* ---------------- Lenis ---------------- */
+  /* ---------------- lightbox (works with or without GSAP) ---------------- */
   let lenis = null;
-  if (!reduce && window.Lenis) {
-    lenis = new Lenis({ duration: 1.15, easing: t => Math.min(1, 1.001 - Math.pow(2, -10 * t)) });
-    lenis.on('scroll', ScrollTrigger.update);
-    gsap.ticker.add(t => lenis.raf(t * 1000));
-    gsap.ticker.lagSmoothing(0);
-  }
-  $$('[data-scroll-to]').forEach(a => a.addEventListener('click', e => {
-    const t = $(a.dataset.scrollTo); if (!t) return;
-    e.preventDefault();
-    if (lenis) lenis.scrollTo(t, { offset: 0, duration: 1.8 }); else t.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' });
-  }));
+  initGallery();
 
-  /* ---------------- the day: background / text colour follow the scroll ---------------- */
-  const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
-  const PAL = {
-    night:   { bg: hex('#1D2A21'), fg: hex('#F4EFE5'), lab: hex('#A9B497') },
-    morning: { bg: hex('#F4EFE5'), fg: hex('#1B231D'), lab: hex('#56634A') },
-    noon:    { bg: hex('#F7F3EC'), fg: hex('#1B231D'), lab: hex('#56634A') }
-  };
-  const T = (h, m) => h * 60 + m;
-  // forest (hero) → ivory (morning rooms, terrace) → forest (private rooms) → ivory (facts, location) → forest (contact)
-  const STOPS = [
-    ['#hero', 0, 'night', 0], ['#hero', 0.85, 'night', 0],
-    ['#s3', 0.0, 'night', 0], ['#s3', 0.22, 'morning', 0],
-    ['#s4', 0.06, 'morning', 0], ['#s4', 0.97, 'noon', 0],
-    ['#private', 0.12, 'night', 0], ['#private', 0.9, 'night', 0],
-    ['#spec', 0.12, 'morning', 0], ['#s8', 0.8, 'morning', 0],
-    ['#s9', 0.12, 'night', 0], ['#s9', 1, 'night', 0]
-  ];
-  let stops = [];
-  const box = el => (el.parentElement && el.parentElement.classList.contains('pin-spacer')) ? el.parentElement : el;
-  function measureStops() {
-    const sy = scrollY;
-    stops = STOPS.map(([sel, f, pal, min]) => {
-      const r = box($(sel)).getBoundingClientRect();
-      return { y: r.top + sy + f * r.height, pal: PAL[pal], min };
-    }).sort((a, b) => a.y - b.y);
+  /* ---------------- top bar + progress + wash (plain scroll listeners: cheap) ---------------- */
+  const bar = $('.topbar'), prog = $('.progress i'), hero = $('#hero'), facts = $('#facts');
+  let lastY = scrollY;
+  function onScroll() {
+    const y = scrollY, max = document.documentElement.scrollHeight - innerHeight;
+    prog.style.transform = `scaleX(${max > 0 ? Math.min(1, y / max) : 0})`;
+    const pastHero = hero ? y > heroEnd() - 60 : true;
+    bar.classList.toggle('is-solid', pastHero);
+    if (Math.abs(y - lastY) > 6) { bar.classList.toggle('is-up', y > lastY && y > 120); lastY = y; }
+    if (facts) {
+      // light section: crossfade in over its first ~30%, back out over its last ~25%
+      const r = facts.getBoundingClientRect(), h = innerHeight;
+      const inP = clamp01((h - r.top) / (r.height * 0.3));
+      const outP = clamp01((h * 0.55 - r.bottom) / (h * 0.45));
+      const w = r.top > h ? 0 : smooth(inP) * (1 - smooth(outP));
+      root.style.setProperty('--wash', w.toFixed(3));
+    }
+    updatePill();
   }
-  const lerp = (a, b, t) => a + (b - a) * t;
-  const mix = (a, b, t) => a.map((v, i) => Math.round(lerp(v, b[i], t)));
-  const rgb = c => `rgb(${c[0]},${c[1]},${c[2]})`;
+  const clamp01 = v => v < 0 ? 0 : v > 1 ? 1 : v;
   const smooth = t => t * t * (3 - 2 * t);
-  const meta = $('meta[name="theme-color"]');
-  let last = { bg: '', fg: '', lab: '' };
-  function paint() {
-    if (!stops.length) return;
-    const c = scrollY + innerHeight * 0.5;
-    let i = 0;
-    while (i < stops.length - 2 && c > stops[i + 1].y) i++;
-    const a = stops[i], b = stops[i + 1];
-    const t = Math.min(1, Math.max(0, (c - a.y) / Math.max(1, b.y - a.y)));
-    const tf = smooth(Math.min(1, Math.max(0, (t - 0.38) / 0.24)));
-    const bg = rgb(mix(a.pal.bg, b.pal.bg, smooth(t))), fg = rgb(mix(a.pal.fg, b.pal.fg, tf)), lab = rgb(mix(a.pal.lab, b.pal.lab, tf));
-    if (bg !== last.bg) { root.style.setProperty('--bg', bg); if (meta) meta.content = bg; last.bg = bg; }
-    if (fg !== last.fg) { root.style.setProperty('--fg', fg); last.fg = fg; }
-    if (lab !== last.lab) { root.style.setProperty('--lab', lab); last.lab = lab; }
+  const heroEnd = () => { const sp = hero.parentElement.classList.contains('pin-spacer') ? hero.parentElement : hero; return sp.offsetTop + sp.offsetHeight - innerHeight; };
+
+  /* ---------------- floating pill ---------------- */
+  const pill = $('.pill');
+  const noPillZones = ['#hero', '#signature', '#story', '#onelevel'].map(s => $(s)).filter(Boolean);
+  const visit = $('#visit');
+  const guard = $$('h2, .story-line, .sig-text, .price-num, .price-sub, .extras, .loc-line, .text-link');
+  let pillHidden = true;
+  function updatePill() {
+    if (!pill) return;
+    const h = innerHeight;
+    let hide = false;
+    // hero not finished, or a pinned / full-screen sequence is on screen
+    for (const el of noPillZones) {
+      const box = el.parentElement.classList.contains('pin-spacer') ? el.parentElement : el;
+      const r = box.getBoundingClientRect();
+      if (r.top < h * 0.5 && r.bottom > h * 0.5) { hide = true; break; }
+      if (el.id === 'hero' && r.bottom > h * 0.25) { hide = true; break; }
+    }
+    if (!hide && visit && visit.getBoundingClientRect().top < h) hide = true;
+    if (!hide && !$('.lightbox[hidden]') && $('.lightbox')) hide = true;
+    if (!hide) {
+      // never on top of a headline or a key line
+      const zoneTop = h - 20 - 44 - 16, half = 130, mid = innerWidth / 2;
+      hide = guard.some(el => {
+        const r = el.getBoundingClientRect();
+        return r.height && r.bottom > zoneTop && r.top < h && r.left < mid + half && r.right > mid - half;
+      });
+    }
+    if (hide !== pillHidden) { pillHidden = hide; pill.classList.toggle('is-hidden', hide); }
   }
 
-  /* ---------------- (b) text: fade + 12px rise ---------------- */
-  if (!reduce) $$('[data-fade]').forEach(el => {
-    gsap.fromTo(el, { autoAlpha: 0, y: reduce ? 0 : 12 }, {
-      autoAlpha: 1, y: 0, duration: 0.4, ease: 'power1.out',
-      scrollTrigger: { trigger: el, start: 'top 90%', once: true }
-    });
-  });
+  /* ---------------- price odometer (layout set up regardless; animation below) ---------------- */
+  const digits = $$('.pd');
+  const setDigit = (pd, v) => { $('.pd-col', pd).style.transform = `translateY(${-v * 5}%)`; };
 
-  /* floating visit action: never alongside the hero button; hidden while a section is pinned, and from the booking section on */
-  const cta = $('.cta'), heroCta = $('.hero-cta');
-  let ctaHidden = true;
-  // things the floating action must never sit on: room navigation, photo captions, the last spec row, form fields
-  const avoid = $$('.seq-nav, figcaption:not(.seq-cap), .spec-list > div:last-child, input, textarea, select');
-  function coversContent() {
-    const zoneTop = innerHeight - cta.offsetHeight - 30;     // the action's band above the bottom edge / safe area
-    const half = cta.offsetWidth / 2 + 12, mid = innerWidth / 2;
-    return avoid.some(el => {
-      const r = el.getBoundingClientRect();
-      if (!r.height || r.bottom < zoneTop || r.top > innerHeight) return false;
-      return r.left < mid + half && r.right > mid - half;
-    });
-  }
-  function updateCta() {
-    const y = scrollY;
-    const heroVisible = heroCta.getBoundingClientRect().bottom > $('.topbar').offsetHeight;
-    const pinned = ScrollTrigger.getAll().some(s => s.pin && y >= s.start - 2 && y <= s.end + 2);
-    const s9 = $('#s9').getBoundingClientRect().top < innerHeight - 60;   // contact section is on screen
-    const hide = heroVisible || pinned || s9 || coversContent();
-    if (hide !== ctaHidden) { ctaHidden = hide; cta.classList.toggle('is-hidden', hide); }
-  }
-
-  if (reduce) {
-    ScrollTrigger.create({ start: 0, end: 'max', onUpdate: () => { paint(); updateCta(); }, onRefresh: () => { measureStops(); paint(); updateCta(); } });
-    finish();
+  if (!hasGsap || reduce) {
+    digits.forEach(pd => setDigit(pd, +pd.dataset.d));
+    addEventListener('scroll', onScroll, { passive: true });
+    addEventListener('resize', onScroll);
+    onScroll();
+    if (hasGsap) simpleFades();
     return;
   }
 
-  /* ---------------- (a) photos: slow push-in 100% → 104% while in view ---------------- */
-  $$('.bleed img').forEach(img => {
-    gsap.fromTo(img, { scale: 1 }, { scale: 1.04, ease: 'none', scrollTrigger: { trigger: img.parentElement, start: 'top bottom', end: 'bottom top', scrub: true } });
-  });
+  gsap.registerPlugin(ScrollTrigger);
+  ScrollTrigger.config({ ignoreMobileResize: true });
+  gsap.defaults({ ease: 'power3.out' });
 
-  /* photos below the fold: one restrained reveal as each enters view */
-  $$('[data-reveal]').forEach(el => {
-    gsap.fromTo(el, { autoAlpha: 0, y: 28 }, { autoAlpha: 1, y: 0, duration: 0.8, ease: 'power2.out', scrollTrigger: { trigger: el, start: 'top 88%', once: true } });
-    const img = $('img', el);
-    if (img) gsap.fromTo(img, { scale: 1.05 }, { scale: 1, duration: 1.1, ease: 'power2.out', scrollTrigger: { trigger: el, start: 'top 88%', once: true } });
-  });
-
-  /* odometers roll with scroll */
-  odos.forEach(o => {
-    ScrollTrigger.create({ trigger: o.h, start: 'top 96%', end: 'top 38%', scrub: 0.5, onUpdate: s => setOdo(o, s.progress) });
-  });
-
-  /* ---------------- 1 · hero: the frame opens to the screen edges as the headline leaves ----------------
-     Normal page scroll (no pin). Clip widens, photo keeps its proportions, scale stays slight. */
-  const heroFrame = $('.hero-frame');
-  // start inset: phone = the page gutter on both sides · desktop = 24px top/bottom + gutter on the outer (left) edge
-  const heroClip = () => {
-    const g = parseFloat(getComputedStyle(root).getPropertyValue('--gut')) || 16;
-    return innerWidth >= 900 ? `inset(24px 0px 24px ${g}px)` : `inset(0px ${g}px 0px ${g}px)`;
-  };
-  gsap.timeline({
-    defaults: { ease: 'none' },
-    scrollTrigger: { trigger: '#hero', start: 'top top', end: () => '+=' + Math.round(innerHeight * 0.55), scrub: 0.4, invalidateOnRefresh: true }
-  })
-    .fromTo(heroFrame, { clipPath: heroClip }, { clipPath: 'inset(0px 0px 0px 0px)', duration: 1 }, 0)
-    .fromTo('.hero-frame img', { scale: 1 }, { scale: 1.04, duration: 1 }, 0);
-
-  /* ---------------- 4 · one level: kitchen → living → terrace ----------------
-     One pinned frame, scroll-scrubbed. Units are viewport heights of scroll:
-     0–.20 kitchen · .20–.70 living enters from the right · .70–.95 living · .95–1.45 terrace enters
-     1.45–1.85 terrace opens to the screen edges · 1.85–2.20 terrace rests with its size, then the pin releases. */
-  const seq = $('#s4'), seqStage = $('.seq-stage', seq), seqItems = $$('.seq-item', seq), seqTabs = $$('.seq-tab', seq);
-  const SEQ = { total: 2.2, cut: [0.45, 1.2], go: [0.02, 0.84, 2.0] };
-  let seqST = null, seqRoom = -1;
-  function setRoom(i) {
-    if (i === seqRoom) return; seqRoom = i;
-    seqTabs.forEach((t, k) => { t.classList.toggle('is-on', k === i); if (k === i) t.setAttribute('aria-current', 'true'); else t.removeAttribute('aria-current'); });
+  /* ---------------- Lenis, wired to ScrollTrigger the standard way ---------------- */
+  if (window.Lenis) {
+    lenis = new Lenis({ duration: 1.1, easing: t => Math.min(1, 1.001 - Math.pow(2, -10 * t)), touchMultiplier: 1.2 });
+    lenis.on('scroll', ScrollTrigger.update);
+    gsap.ticker.add(t => lenis.raf(t * 1000));
+    gsap.ticker.lagSmoothing(0);
+    $$('a[href^="#"]').forEach(a => a.addEventListener('click', e => {
+      const t = $(a.getAttribute('href')); if (!t) return;
+      e.preventDefault(); lenis.scrollTo(t, { duration: 1.6 });
+    }));
   }
-  seqTabs.forEach((t, i) => t.addEventListener('click', () => {
-    if (!seqST) { seqItems[i].scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
-    const y = Math.round(seqST.start + (SEQ.go[i] / SEQ.total) * (seqST.end - seqST.start));
-    if (lenis) lenis.scrollTo(y, { duration: 1.1 }); else scrollTo({ top: y, behavior: 'smooth' });
-  }));
-  gsap.matchMedia().add('(prefers-reduced-motion: no-preference) and (min-height: 520px)', () => {
-    seq.classList.add('is-seq');
-    const W = () => seqStage.clientWidth;
-    const g = () => {
-      const gut = parseFloat(getComputedStyle(root).getPropertyValue('--gut')) || 16;
-      const v = Math.round(Math.max(gut, (root.clientWidth - 1120) / 2));
-      seq.style.setProperty('--seq-g', v + 'px');
-      return v;
+  addEventListener('scroll', onScroll, { passive: true });
+
+  /* ---------------- text reveals ---------------- */
+  function lines(el, delay = 0) {
+    return gsap.to($$('.ln > span', el), { y: 0, yPercent: 0, duration: 0.9, stagger: 0.08, delay, ease: 'power3.out' });
+  }
+  const fadeIn = (el, delay = 0) => gsap.fromTo(el, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.7, delay });
+  // standalone reveals (not inside pinned sequences, which drive their own)
+  $$('[data-lines]').filter(el => !el.closest('.signature')).forEach(el => {
+    gsap.set($$('.ln > span', el), { yPercent: 105, y: 0 });
+    ScrollTrigger.create({ trigger: el, start: 'top 86%', once: true, onEnter: () => lines(el) });
+  });
+  $$('[data-fade]').filter(el => !el.closest('.signature')).forEach(el => {
+    ScrollTrigger.create({ trigger: el, start: 'top 90%', once: true, onEnter: () => fadeIn(el, el.matches('.slot') ? 0.06 * $$('.slot').indexOf(el) : 0.08) });
+  });
+
+
+  /* ---------------- 7.1 hero: intro, then the shrink ---------------- */
+  if (hero) {
+    const card = $('.hero-card'), himg = $('.hero-img'), title = $('.hero-title'), label = $('.hero-label'), hint = $('.hero-hint'), shade = $('.hero-shade');
+    gsap.set($$('.ln > span', title), { yPercent: 105, y: 0 });
+    const intro = gsap.timeline({ paused: true, onComplete: () => title.classList.add('is-open') })
+      .fromTo(himg, { scale: 1.12 }, { scale: 1, duration: 1.4, ease: 'power3.out' }, 0)
+      .to($$('.ln > span', title), { yPercent: 0, y: 0, duration: 0.9, stagger: 0.08 }, 0.35)
+      .fromTo($('.in', label), { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.7 }, 0.85)
+      .fromTo($('.in', hint), { opacity: 0 }, { opacity: 0.8, duration: 0.6 }, 1.2);
+    const go = () => intro.play();
+    if (himg.complete) requestAnimationFrame(go); else { himg.addEventListener('load', go, { once: true }); setTimeout(go, 1600); }
+
+    // shrink: full-bleed → centred card (~82% × 62%), title rises and scales to ~55%
+    const cardInset = () => {
+      const w = innerWidth, h = innerHeight;
+      const x = Math.round(w * (w >= 900 ? 0.14 : 0.09)), y = Math.round(h * 0.19);
+      return { x, y };
     };
-    const hidden = () => `inset(0px 0px 0px ${W() - g()}px)`;   // nothing visible inside the frame
-    const shown = () => `inset(0px 0px 0px ${g()}px)`;          // fills the frame
-    const [k, l, t] = seqItems, img = el => $('img', el);
+    const titleTarget = () => {
+      // title's right edge on the card's right edge, sitting just above the card
+      const { x, y } = cardInset();
+      const r = title.getBoundingClientRect(), s = 0.55;
+      const right = innerWidth - r.right;           // current gap to the right edge
+      return { x: -(x - right), y: (y - 14 - r.height * s) - r.top, s };
+    };
+    const tl = gsap.timeline({
+      defaults: { ease: 'none' },
+      scrollTrigger: { trigger: hero, start: 'top top', end: () => '+=' + Math.round(innerHeight * 1.2), pin: true, scrub: 0.6, invalidateOnRefresh: true, anticipatePin: 1 }
+    });
+    tl.fromTo(card, { clipPath: 'inset(0px 0px 0px 0px round 0px)' }, { clipPath: () => { const { x, y } = cardInset(); return `inset(${y}px ${x}px ${y}px ${x}px round 4px)`; }, duration: 1 }, 0)
+      .fromTo(himg, { scale: 1 }, { scale: 0.94, duration: 1, immediateRender: false }, 0)
+      .to(shade, { opacity: 0.35, duration: 0.6 }, 0)
+      .fromTo([label, hint], { opacity: 1 }, { opacity: 0, duration: 0.25 }, 0)
+      .to(title, { x: () => titleTarget().x, y: () => titleTarget().y, scale: 0.55, duration: 1 }, 0)
+      .to({}, { duration: 0.18 });
+  }
+
+  /* ---------------- photo push-in (non-pinned full-bleed photos) ---------------- */
+  $$('.push').forEach(img => {
+    gsap.fromTo(img, { scale: 1 }, { scale: 1.06, ease: 'none', scrollTrigger: { trigger: img.parentElement, start: 'top bottom', end: 'bottom top', scrub: true } });
+  });
+
+  /* ---------------- 7.2 signature: pan (portrait) or push-in (landscape), line reveals ---------------- */
+  const sig = $('#signature');
+  if (sig) {
+    const simg = $('.sig-img', sig), stitle = $('.sig-title', sig), ssub = $('.sig-sub', sig);
+    gsap.set($$('.ln > span', stitle), { yPercent: 105, y: 0 });
+    if (ssub) gsap.set(ssub, { opacity: 0, y: 14 });
+    // created inline (not in a matchMedia callback) so pins register in page order; portrait vs landscape is resolved on every refresh
+    const tl = gsap.timeline({
+      defaults: { ease: 'none' },
+      scrollTrigger: { trigger: sig, start: 'top top', end: () => '+=' + Math.round(innerHeight * 1.5), pin: true, scrub: 0.6, invalidateOnRefresh: true, anticipatePin: 1 }
+    });
+    // portrait: pan the panorama right → left · landscape: slow push-in
+    tl.fromTo(simg, { x: 0, scale: 1 }, { x: () => portrait() ? Math.max(0, simg.offsetWidth - innerWidth) : 0, scale: () => portrait() ? 1 : 1.06, duration: 1 }, 0)
+      .to($$('.ln > span', stitle), { yPercent: 0, y: 0, duration: 0.14, stagger: 0.03, ease: 'power3.out' }, 0.32);
+    if (ssub) tl.to(ssub, { opacity: 0.86, y: 0, duration: 0.12, ease: 'power3.out' }, 0.5);
+  }
+
+  /* ---------------- 7.3 story: pinned stack, clip-path wipe from the bottom ---------------- */
+  const story = $('#story');
+  if (story) {
+    const items = $$('.story-item', story), now = $('.story-now', story), n = items.length;
+    const parts = items.map(it => ({ it, img: $('.story-img', it), ghost: $('.ghost', it), line: $('.story-line', it) }));
+    let cur = -1;
+    const setNow = i => { if (i !== cur) { cur = i; now.textContent = String(i + 1).padStart(2, '0'); } };
+    const HOLD = 0.6, WIPE = 1;
+    const total = HOLD + (n - 1) * (WIPE + HOLD);
     const tl = gsap.timeline({
       defaults: { ease: 'none' },
       scrollTrigger: {
-        trigger: seq, start: 'top top', end: () => '+=' + Math.round(innerHeight * SEQ.total),
-        pin: true, scrub: 0.5, anticipatePin: 1, invalidateOnRefresh: true, refreshPriority: 8,
-        onUpdate: self => { const u = self.progress * SEQ.total; setRoom(u < SEQ.cut[0] ? 0 : u < SEQ.cut[1] ? 1 : 2); }
+        trigger: story, start: 'top top', end: () => '+=' + Math.round(innerHeight * total), pin: true, scrub: 0.6, invalidateOnRefresh: true, anticipatePin: 1,
+        onUpdate: s => { const u = s.progress * total; setNow(Math.min(n - 1, Math.max(0, Math.floor((u - HOLD - WIPE * 0.5) / (WIPE + HOLD)) + 1))); }
       }
     });
-    seqST = tl.scrollTrigger;
-    tl.fromTo(seqStage, { clipPath: () => `inset(0px ${g()}px)` }, { clipPath: () => `inset(0px ${g()}px)`, duration: 0.001 }, 0)
-      .fromTo('.seq-rule b', { scaleX: 0 }, { scaleX: 1, duration: 1.85 }, 0)
-      .fromTo(img(k), { scale: 1 }, { scale: 1.03, duration: 0.95 }, 0)
-      // living enters from the right; kitchen stays put underneath
-      .fromTo(l, { clipPath: hidden }, { clipPath: shown, duration: 0.5, ease: 'power1.inOut' }, 0.2)
-      .fromTo(img(l), { xPercent: 2.5, scale: 1.05 }, { xPercent: 0, scale: 1, duration: 0.5, ease: 'power1.out' }, 0.2)
-      .to(img(l), { scale: 1.03, duration: 0.75 }, 0.7)
-      // terrace enters the same way
-      .fromTo(t, { clipPath: hidden }, { clipPath: shown, duration: 0.5, ease: 'power1.inOut' }, 0.95)
-      .fromTo(img(t), { xPercent: 2.5, scale: 1.05 }, { xPercent: 0, scale: 1, duration: 0.5, ease: 'power1.out' }, 0.95)
-      // the frame opens: terrace to the screen edges
-      .to(seqStage, { clipPath: 'inset(0px 0px)', duration: 0.4, ease: 'power1.inOut' }, 1.45)
-      .to(t, { clipPath: 'inset(0px 0px 0px 0px)', duration: 0.4, ease: 'power1.inOut' }, 1.45)
-      .fromTo('.seq-tag', { autoAlpha: 0, y: 8 }, { autoAlpha: 1, y: 0, duration: 0.12, ease: 'power1.out' }, 1.82)
-      .to({}, { duration: 0.26 }, 1.94);
-    return () => { seq.classList.remove('is-seq'); seq.style.removeProperty('--seq-g'); seqST = null; seqRoom = -1; setRoom(0); };
+    // first item: words rise in as the section arrives (not scrubbed: it's the entrance)
+    gsap.set([parts[0].ghost, parts[0].line], { opacity: 0, y: 30 });
+    ScrollTrigger.create({ trigger: story, start: 'top 60%', once: true, onEnter: () => {
+      gsap.to(parts[0].ghost, { opacity: 1, y: 0, duration: 1.1 });
+      gsap.to(parts[0].line, { opacity: 1, y: 0, duration: 0.8, delay: 0.15 });
+    } });
+    parts.forEach((p, i) => {
+      const t0 = i === 0 ? 0 : HOLD + (i - 1) * (WIPE + HOLD);           // when this item starts entering
+      const life = (i === 0 ? HOLD : WIPE + HOLD) + (i < n - 1 ? WIPE : 0);
+      // subtle drift: ≤ 8% of width over the item's time on screen
+      tl.fromTo(p.img, { xPercent: 3.5 }, { xPercent: -3.5, duration: life }, t0);
+      if (i === 0) return;
+      tl.fromTo(p.it, { clipPath: 'inset(100% 0% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: WIPE, ease: 'power1.inOut' }, t0)
+        .to(parts[i - 1].ghost, { yPercent: -60, opacity: 0, duration: WIPE * 0.6 }, t0)
+        .to(parts[i - 1].line, { opacity: 0, y: -20, duration: WIPE * 0.4 }, t0)
+        .fromTo(p.ghost, { yPercent: 60, opacity: 0 }, { yPercent: 0, opacity: 1, duration: WIPE * 0.6 }, t0 + WIPE * 0.4)
+        .fromTo(p.line, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: WIPE * 0.35 }, t0 + WIPE * 0.62);
+    });
+    tl.to({}, { duration: HOLD * 0.5 });
+  }
+
+  /* ---------------- 7.4 one level: pinned horizontal strip ---------------- */
+  const ol = $('#onelevel');
+  if (ol) {
+    const strip = $('.ol-strip', ol), fill = $('.ol-fill', ol), labs = $$('.ol-label', ol), head = $('.ol-head', ol);
+    const dist = () => Math.max(0, strip.scrollWidth - strip.parentElement.clientWidth);
+    let on = 0;
+    const tl = gsap.timeline({
+      defaults: { ease: 'none' },
+      scrollTrigger: {
+        trigger: ol, start: 'top top', end: () => '+=' + Math.round(dist() * 1.15 + innerHeight * 0.35), pin: true, scrub: 0.6, invalidateOnRefresh: true, anticipatePin: 1,
+        onUpdate: s => {
+          const p = clamp01((s.progress - 0.12) / 0.8), i = Math.min(labs.length - 1, Math.round(p * (labs.length - 1)));
+          if (i !== on) { labs[on].classList.remove('is-on'); labs[i].classList.add('is-on'); on = i; }
+        }
+      }
+    });
+    // RTL: kitchen starts on the right; the strip moves right to bring the next rooms in from the left
+    tl.to({}, { duration: 0.12 })
+      .fromTo(strip, { x: 0 }, { x: () => dist(), duration: 0.8 }, 0.12)
+      .fromTo(fill, { scaleX: 1 / labs.length }, { scaleX: 1, duration: 0.8 }, 0.12)
+      .to({}, { duration: 0.08 });
+    $$('.ol-item img', ol).forEach(img => tl.fromTo(img, { scale: 1.06 }, { scale: 1, duration: 1 }, 0));
+  }
+
+  /* ---------------- 7.5 price: odometer roll, once ---------------- */
+  const price = $('#price');
+  if (price) {
+    digits.forEach(pd => setDigit(pd, 0));
+    ScrollTrigger.create({ trigger: $('.price-num', price), start: 'top 78%', once: true, onEnter: () => {
+      const tl = gsap.timeline();
+      digits.forEach((pd, i) => {
+        const d = +pd.dataset.d, col = $('.pd-col', pd);
+        tl.fromTo(col, { yPercent: 0 }, { yPercent: -(10 + d) * 5, duration: 1.2, ease: 'power4.out' }, i * 0.06);
+      });
+      tl.to($$('.pc', price), { opacity: 1, duration: 0.5, ease: 'power2.out' }, '-=0.35')
+        .fromTo('.price-rule', { scaleX: 0 }, { scaleX: 1, duration: 0.8, ease: 'power3.inOut' }, '-=0.2');
+    } });
+    // odometer columns use yPercent on the column; clear the static transform
+    digits.forEach(pd => { $('.pd-col', pd).style.transform = ''; });
+  }
+
+  /* ---------------- 7.6 facts: count up once ---------------- */
+  $$('.fact-num').forEach(el => {
+    const raw = el.dataset.count, to = parseFloat(raw), dec = (raw.split('.')[1] || '').length;
+    if (!isFinite(to)) return;
+    const o = { v: 0 };
+    el.textContent = (0).toFixed(dec);
+    ScrollTrigger.create({ trigger: el, start: 'top 88%', once: true, onEnter: () => gsap.to(o, { v: to, duration: 1, ease: 'power2.out', onUpdate: () => { el.textContent = o.v.toFixed(dec); } }) });
   });
 
-  ScrollTrigger.create({ start: 0, end: 'max', onUpdate: () => { paint(); updateCta(); } });
-  ScrollTrigger.addEventListener('refresh', () => { measureStops(); paint(); updateCta(); });
-  finish();
+  /* ---------------- refresh discipline ---------------- */
+  ScrollTrigger.addEventListener('refresh', onScroll);
+  ScrollTrigger.refresh();
+  onScroll();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => ScrollTrigger.refresh());
+  addEventListener('load', () => ScrollTrigger.refresh(), { once: true });
 
-  function finish() {
-    ScrollTrigger.sort();
-    ScrollTrigger.refresh();
-    measureStops(); paint();
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => ScrollTrigger.refresh());
-    addEventListener('load', () => ScrollTrigger.refresh(), { once: true });
+  /* ================================================================ */
+  function simpleFades() {
+    gsap.registerPlugin(ScrollTrigger);
+    $$('[data-fade], [data-lines]').forEach(el => {
+      gsap.set($$('.ln > span', el), { yPercent: 0, y: 0 });
+      gsap.fromTo(el, { opacity: 0 }, { opacity: 1, duration: 0.6, ease: 'power1.out', scrollTrigger: { trigger: el, start: 'top 92%', once: true } });
+    });
+  }
+
+  function initGallery() {
+    const data = $('#gallery-data'), lb = $('.lightbox'), strip = $('.gal-strip');
+    if (!data || !lb || !strip) return;
+    const photos = JSON.parse(data.textContent);
+    const track = $('.lb-track', lb), count = $('.lb-count', lb), closeBtn = $('.lb-close', lb);
+    track.innerHTML = photos.map((p, i) => `<figure class="lb-slide" data-i="${i}"><img data-src="${p.src}" alt="${p.alt.replace(/"/g, '&quot;')}" width="${p.w}" height="${p.h}" decoding="async"></figure>`).join('');
+    const slides = $$('.lb-slide', track);
+    let idx = 0, opener = null;
+    const load = i => { const im = slides[i] && $('img', slides[i]); if (im && !im.src) im.src = im.dataset.src; };
+    const setCount = i => { idx = i; count.textContent = `${i + 1} / ${photos.length}`; load(i - 1); load(i); load(i + 1); };
+    const goTo = (i, smoothScroll = true) => {
+      i = Math.max(0, Math.min(photos.length - 1, i));
+      slides[i].scrollIntoView({ behavior: smoothScroll && !reduce ? 'smooth' : 'auto', inline: 'center', block: 'nearest' });
+      setCount(i);
+    };
+    let raf = 0;
+    track.addEventListener('scroll', () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const w = track.clientWidth, i = Math.round(Math.abs(track.scrollLeft) / w);
+        if (i !== idx) setCount(i);
+      });
+    }, { passive: true });
+    const open = (i, from) => {
+      opener = from || document.activeElement;
+      lb.hidden = false;
+      root.classList.add('lb-open'); document.body.classList.add('lb-open');
+      if (lenis) lenis.stop();
+      setCount(i);
+      requestAnimationFrame(() => { goTo(i, false); closeBtn.focus(); });
+      updatePillSafe();
+    };
+    const close = () => {
+      lb.hidden = true;
+      root.classList.remove('lb-open'); document.body.classList.remove('lb-open');
+      if (lenis) lenis.start();
+      if (opener) opener.focus();
+      updatePillSafe();
+    };
+    const updatePillSafe = () => updatePill();
+    $$('.gal-item', strip).forEach(b => b.addEventListener('click', () => { if (!strip.dataset.dragged) open(+b.dataset.i, b); }));
+    closeBtn.addEventListener('click', close);
+    $('.lb-prev', lb).addEventListener('click', () => goTo(idx - 1));
+    $('.lb-next', lb).addEventListener('click', () => goTo(idx + 1));
+    lb.addEventListener('keydown', e => {
+      if (e.key === 'Escape') { e.preventDefault(); close(); }
+      else if (e.key === 'ArrowLeft') goTo(idx + 1);       // RTL: left = next
+      else if (e.key === 'ArrowRight') goTo(idx - 1);
+      else if (e.key === 'Tab') {
+        const f = $$('button', lb).filter(b => b.offsetParent !== null);
+        const first = f[0], last = f[f.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    });
+
+    // strip: arrows + mouse drag (touch stays native)
+    const step = () => ($('.gal-item', strip).offsetWidth + 16);
+    $$('.gal-arrow').forEach(b => b.addEventListener('click', () => strip.scrollBy({ left: (b.dataset.dir === 'next' ? -1 : 1) * step(), behavior: 'smooth' })));
+    let down = null;
+    strip.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse') return; down = { x: e.clientX, s: strip.scrollLeft, moved: false }; });
+    addEventListener('pointermove', e => {
+      if (!down) return;
+      const dx = e.clientX - down.x;
+      if (!down.moved && Math.abs(dx) > 6) { down.moved = true; strip.classList.add('is-drag'); strip.dataset.dragged = '1'; }
+      if (down.moved) strip.scrollLeft = down.s - dx;
+    });
+    addEventListener('pointerup', () => {
+      if (!down) return;
+      const moved = down.moved; down = null;
+      if (moved) {
+        const s = strip.scrollLeft, w = step();
+        strip.classList.remove('is-drag');
+        strip.scrollTo({ left: Math.round(s / w) * w, behavior: 'smooth' });
+        setTimeout(() => { delete strip.dataset.dragged; }, 50);
+      }
+    });
+    strip.addEventListener('keydown', e => {
+      if (e.key === 'ArrowLeft') { e.preventDefault(); strip.scrollBy({ left: -step(), behavior: 'smooth' }); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); strip.scrollBy({ left: step(), behavior: 'smooth' }); }
+    });
   }
 })();
