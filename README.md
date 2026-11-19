@@ -12,7 +12,7 @@ build.mjs              node build.mjs <slug>  →  index.html, assets/, og.jpg a
 
 1. **Copy** the repo (or copy `listings/ussishkin-10` to `listings/<new-slug>`).
 2. **Photos:** put the agent's photos in `listings/<new-slug>/photos/`, named `<name>-1.JPG`, `<name>-2.JPG` …
-3. **Edit `data.json`:** texts, facts, price, agent, and photo numbers (`hero`, `signature`, `location`, `story`, `oneLevel`, `gallery`, `exclude`). Add `focus` (CSS object-position) for full-screen photos and a short Hebrew `alt` for every photo used. Empty fields don't render; `"price": null` removes the price section.
+3. **Edit `data.json`:** texts, facts, price, agent, and photo numbers (`hero`, `signature`, `location`, `story`, `oneLevel`, `exclude`). The gallery is `gallery: [{ "photo": 30, "latin": "THE BUILDING", "he": "הבניין" }, …]` in display order. `floor` drives the elevator intro; `hero` holds the meta line, price label, caption and bottom note; `menu` holds the Hebrew menu names. Add `focus` (CSS object-position) for full-screen photos and a short Hebrew `alt` for every photo used. Empty fields don't render; `"price": null` removes the price section.
 4. **Build:** `npm install` (once, installs sharp), then `node build.mjs <new-slug>`.
 5. **Publish:** commit + push. Then paste the link into a WhatsApp chat to check the preview card (title, price line, photo).
 

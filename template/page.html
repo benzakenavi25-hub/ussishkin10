@@ -26,7 +26,7 @@
 {{preload}}
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@200;300;400&family=Cormorant+Garamond:wght@300;400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/styles.css?v={{v}}">
-<script>(function(r){r.classList.add('js');var rm=matchMedia('(prefers-reduced-motion: reduce)').matches;if(rm)r.classList.add('rm');try{if(!rm&&!sessionStorage.getItem('intro-seen'))r.classList.add('has-intro')}catch(e){}})(document.documentElement);</script>
+<script>(function(r){r.classList.add('js');var rm=matchMedia('(prefers-reduced-motion: reduce)').matches;if(rm)r.classList.add('rm');if(!rm)r.classList.add('has-intro')})(document.documentElement);</script>
 </head>
 <body>
 <a class="skip" href="#visit">דלגו לתיאום ביקור</a>
@@ -37,12 +37,13 @@
 <div class="progress" aria-hidden="true"><i></i></div>
 <header class="topbar">
   <a class="brand" href="#hero">{{brand}}</a>
-  <span class="label topbar-sub">{{brandSub}}</span>
+  <button class="menu-btn" type="button" aria-expanded="false" aria-controls="menu"><span>תפריט</span><i class="burger" aria-hidden="true"><b></b><b></b></i></button>
+  <i class="topbar-line" aria-hidden="true"></i>
 </header>
+{{section_menu}}
 <main>
 {{section_hero}}
 {{section_story}}
-{{section_details}}
 {{section_oneLevel}}
 {{section_price}}
 {{section_facts}}

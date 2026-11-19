@@ -99,21 +99,6 @@
     "hero": 27,
     "signature": 28,
     "location": 30,
-    "gallery": [
-      30,
-      24,
-      26,
-      16,
-      12,
-      20,
-      22,
-      18,
-      10,
-      8,
-      11,
-      3,
-      29
-    ],
     "exclude": [
       1,
       2,
@@ -213,37 +198,110 @@
     "view": "THE VIEW",
     "story": "THE HOME",
     "oneLevel": "ONE LEVEL",
-    "details": "THE DETAILS",
     "price": "THE PRICE",
     "facts": "IN NUMBERS",
     "gallery": "GALLERY",
     "location": "THE LOCATION",
     "visit": "PRIVATE TOUR"
   },
-  "details": {
-    "title": "בפרטים הקטנים.",
-    "items": [
-      {
-        "photo": 8,
-        "crop": [
-          0.17,
-          0.22,
-          0.26,
-          0.527
-        ],
-        "line": "פינת איפור עם מראה מוארת."
-      },
-      {
-        "photo": 10,
-        "crop": [
-          0.3,
-          0.08,
-          0.365,
-          0.74
-        ],
-        "line": "חיפוי בדמוי עץ, מהרצפה עד התקרה."
-      }
-    ]
+  "factsTitle": "הדירה, במספרים.",
+  "floor": 5,
+  "hero": {
+    "meta": [
+      "מיני פנטהאוז",
+      "6 חד׳",
+      "170 מ״ר + 50 מ״ר מרפסת",
+      "קומה 5"
+    ],
+    "priceLabel": "מחיר מבוקש",
+    "caption": "קומה",
+    "tour": "לסיור בבית",
+    "note": "בבלעדיות · בוטיק נדל״ן"
   },
-  "factsTitle": "הדירה, במספרים."
+  "menu": {
+    "view": "הנוף",
+    "story": "הבית",
+    "oneLevel": "מפלס אחד",
+    "price": "מחיר",
+    "gallery": "גלריה",
+    "location": "מיקום",
+    "visit": "תיאום ביקור"
+  },
+  "gallery": [
+    {
+      "photo": 30,
+      "latin": "THE BUILDING",
+      "he": "הבניין"
+    },
+    {
+      "photo": 24,
+      "latin": "TERRACE",
+      "he": "המרפסת"
+    },
+    {
+      "photo": 26,
+      "latin": "TERRACE",
+      "he": "המרפסת"
+    },
+    {
+      "photo": 29,
+      "latin": "TERRACE",
+      "he": "המרפסת"
+    },
+    {
+      "photo": 16,
+      "latin": "LIVING",
+      "he": "הסלון"
+    },
+    {
+      "photo": 12,
+      "latin": "LIVING",
+      "he": "הסלון"
+    },
+    {
+      "photo": 22,
+      "latin": "LIVING",
+      "he": "הסלון"
+    },
+    {
+      "photo": 18,
+      "latin": "KITCHEN",
+      "he": "המטבח"
+    },
+    {
+      "photo": 20,
+      "latin": "KITCHEN",
+      "he": "המטבח"
+    },
+    {
+      "photo": 9,
+      "latin": "SUITE",
+      "he": "יחידת ההורים"
+    },
+    {
+      "photo": 8,
+      "latin": "BEDROOM",
+      "he": "חדר שינה"
+    },
+    {
+      "photo": 10,
+      "latin": "BATH",
+      "he": "חדר רחצה"
+    },
+    {
+      "photo": 11,
+      "latin": "BATH",
+      "he": "חדר רחצה"
+    },
+    {
+      "photo": 3,
+      "latin": "BATH",
+      "he": "חדר רחצה"
+    },
+    {
+      "photo": 28,
+      "latin": "THE VIEW",
+      "he": "הנוף"
+    }
+  ]
 }

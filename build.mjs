@@ -32,8 +32,7 @@ const K = {
   hero: use(P.hero), view: use(P.signature), location: use(P.location),
   story: (d.story || []).map(s => use(s.photo)),
   oneLevel: ((d.oneLevel || {}).photos || []).map(n => use(n)),
-  details: ((d.details || {}).items || []).map(it => use(it.photo, it.crop, it.crop ? `${it.photo}c` : String(it.photo))),
-  gallery: (P.gallery || []).map(n => use(n)),
+  gallery: (d.gallery || []).map(g => use(g.photo)),
 };
 const fullscreen = new Set((P.fullscreen || [P.hero, P.signature]).map(String));
 
@@ -203,15 +202,33 @@ const frame = (inner, { cls = '', reveal = true } = {}) =>
 function sections() {
   const S = {}, L = d.labels || {};
 
+  // the elevator: two doors, a floor display counting up to this listing's floor, then the doors open on the hero
+  const floor = Math.max(1, Math.min(99, Number(d.floor) || 1)), pad2 = n => String(n).padStart(2, '0');
   S.intro = `<div class="intro" aria-hidden="true">
-  <div class="intro-in">
-    <p class="intro-title">${d.title.split(' ').map(w => /^\d/.test(w) ? `<span class="ic"><bdi>${esc(w)}</bdi></span>` : [...w].map(ch => `<span class="ic">${esc(ch)}</span>`).join('')).join('<span class="ic sp"> </span>')}</p>
-    <i class="intro-line"></i>
-    <p class="intro-label" lang="en">${esc(d.introLabel || L.hero || '')}</p>
+  <div class="door door-l"></div>
+  <div class="door door-r"></div>
+  <i class="door-seam"></i>
+  <div class="floor">
+    <p class="floor-label" lang="en">FLOOR</p>
+    <p class="floor-num"><span class="floor-col">${Array.from({ length: floor }, (_, k) => `<span>${pad2(k + 1)}</span>`).join('')}</span></p>
   </div>
 </div>`;
 
-  // hero → card → the view: one pinned section (main.js); without motion it's two full-bleed screens
+  // the menu: one link per section that exists
+  const M = d.menu || {};
+  const menuItems = [['view', '#view', K.view], ['story', '#story', (d.story || []).length], ['oneLevel', '#onelevel', d.oneLevel], ['price', '#price', d.price != null],
+    ['gallery', '#gallery', K.gallery.length], ['location', '#location', d.location && K.location], ['visit', '#visit', d.visit && d.agent]]
+    .filter(([k, , on]) => on && L[k] && M[k]);
+  S.menu = `<div class="menu" id="menu" role="dialog" aria-modal="true" aria-label="תפריט" hidden>
+  <button class="menu-close" type="button">סגירה <span aria-hidden="true">✕</span></button>
+  <nav class="menu-nav" aria-label="ניווט באתר"><ul>
+    ${menuItems.map(([k, href]) => `<li><a class="menu-link" href="${href}"><span class="menu-en" lang="en">${esc(L[k])}</span><span class="menu-he">${esc(M[k])}</span></a></li>`).join('\n    ')}
+  </ul></nav>
+</div>`;
+
+  // hero: website chrome around the framed photo 27; scrolling grows it back to full screen and into the view (one pinned section, main.js)
+  const H = d.hero || {};
+  const dot = '<i class="dot" aria-hidden="true"></i>';
   S.hero = `
 <section class="hero" id="hero" aria-label="${esc(d.title)}">
   <div class="hero-clip">
@@ -226,8 +243,18 @@ function sections() {
     </div>` : ''}
   </div>
   <div class="hero-frame" aria-hidden="true">${LINES}</div>
-  <div class="hero-head">${head(L.hero || `${d.type} · ${d.area}`, d.title, { tag: 'h1', cls: 'hero-sh' })}</div>
-  <div class="hero-hint" aria-hidden="true"><span>גלול</span><i></i></div>
+  <div class="hero-head">
+    <p class="hero-label label-en" lang="en">${esc(L.hero || `${d.type} · ${d.area}`)}</p>
+    <h1 class="hero-title">${nums(d.title)}</h1>
+    ${(H.meta || []).length ? `<p class="hero-meta">${H.meta.map(m => `<span class="nw">${nums(m)}</span>`).join(dot)}</p>` : ''}
+    ${d.price != null ? `<p class="hero-price"><span class="hero-price-label">${esc(H.priceLabel || 'מחיר מבוקש')}</span><span class="hero-price-num num" dir="ltr">${fmtPrice(d.price)}</span></p>` : ''}
+    <i class="hero-rule" aria-hidden="true"></i>
+  </div>
+  ${H.caption ? `<p class="hero-cap" aria-hidden="true"><span class="hero-cap-in"><b class="num">${pad2(floor)}</b> · ${esc(H.caption)}</span></p>` : ''}
+  <div class="hero-bottom"><div class="hero-bottom-in">
+    ${K.view ? `<a class="hero-tour" href="#view"><i aria-hidden="true"></i>${esc(H.tour || 'לסיור בבית')} <span aria-hidden="true">↓</span></a>` : '<span></span>'}
+    ${H.note ? `<p class="hero-note">${esc(H.note)}</p>` : ''}
+  </div></div>
 </section>`;
 
   const st = d.story || [];
@@ -241,18 +268,6 @@ function sections() {
     ${frame(img(K.story[i], { defer: true, sizes: '(min-width: 900px) 64vw, calc(100vw - 48px)' }), { cls: 'story-frame', reveal: false })}
     <p class="story-line">${nums(s.line)}</p>
   </article>`).join('\n  ')}
-  </div>
-</section>` : '';
-
-  const dt = d.details;
-  S.details = dt && dt.items && dt.items.length ? `
-<section class="details" id="details" aria-label="${esc(dt.title)}">
-  ${head(L.details, dt.title)}
-  <div class="details-list">
-    ${dt.items.map((it, i) => `<figure class="detail">
-      ${frame(img(K.details[i], { sizes: '(min-width: 900px) 34vw, calc(100vw - 48px)' }), { cls: 'frame-45' })}
-      <figcaption class="detail-line" data-fade>${nums(it.line)}</figcaption>
-    </figure>`).join('\n    ')}
   </div>
 </section>` : '';
 
@@ -296,29 +311,35 @@ function sections() {
   ${(d.extras || []).length ? `<p class="extras" data-fade>${d.extras.map(e => `<span class="nw">${esc(e)}</span>`).join(' · ')}</p>` : ''}
 </section>` : '';
 
-  const gal = K.gallery;
+  // gallery: a framed coverflow. The track is laid out LTR so a swipe to the left brings the next photo (main.js drives the look)
+  const gal = K.gallery, GI = d.gallery || [], tot = pad2(gal.length);
+  const L_ARR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>', R_ARR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
   S.gallery = gal.length ? `
 <section class="gallery" id="gallery" aria-label="כל התמונות">
-  <div class="gal-head">
-    ${head(L.gallery, 'כל התמונות')}
-    <p class="gal-count" data-fade><span class="num">${gal.length}</span> תמונות</p>
+  <div class="gal-head">${head(L.gallery, 'כל התמונות')}</div>
+  <div class="cf">
+    <div class="cf-track" dir="ltr" tabindex="0" aria-roledescription="carousel" aria-label="גלריה, החליקו לצדדים">
+      ${gal.map((k, i) => `<div class="cf-slide${i === 0 ? ' is-on' : ''}" data-i="${i}"><button class="cf-card" type="button" aria-label="${esc(GI[i].he)}: ${alt(k)}">${frame(img(k, { sizes: '(min-width: 900px) 46vw, 72vw' }) + '<span class="cf-dim"></span>', { reveal: false })}</button></div>`).join('\n      ')}
+    </div>
+    <button class="cf-arrow cf-prev" type="button" aria-label="התמונה הקודמת">${L_ARR}</button>
+    <button class="cf-arrow cf-next" type="button" aria-label="התמונה הבאה">${R_ARR}</button>
   </div>
-  <div class="gal-strip" tabindex="0" aria-label="גלריה, החליקו לצדדים">
-    ${gal.map((k, i) => `<button class="gal-item" type="button" data-i="${i}" aria-label="פתיחת תמונה ${i + 1}: ${alt(k)}">${frame(img(k, { sizes: '(min-width: 900px) 46vw, 78vw' }), { reveal: false })}</button>`).join('\n    ')}
+  <div class="cf-meta">
+    <div class="cf-cap"><p class="cf-en label-en" lang="en">${esc(GI[0].latin)}</p><p class="cf-he">${esc(GI[0].he)}</p></div>
+    <p class="cf-count" dir="ltr"><b class="cf-now">01</b><span class="cf-of"> / ${tot}</span></p>
   </div>
-  <div class="gal-nav">
-    <button class="gal-arrow" type="button" data-dir="prev" aria-label="התמונה הקודמת"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
-    <button class="gal-arrow" type="button" data-dir="next" aria-label="התמונה הבאה"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+  <div class="cf-bar" dir="ltr">
+    ${gal.map((k, i) => `<button class="cf-seg${i === 0 ? ' is-on' : ''}" type="button" data-i="${i}" aria-label="תמונה ${i + 1} מתוך ${gal.length}"><i></i></button>`).join('')}
   </div>
 </section>
 <div class="lightbox" role="dialog" aria-modal="true" aria-label="תמונות הדירה" hidden>
   <button class="lb-close" type="button" aria-label="סגירה"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
-  <div class="lb-track"></div>
+  <div class="lb-track" dir="ltr"></div>
   <p class="lb-count num" dir="ltr"></p>
-  <button class="lb-arrow lb-prev" type="button" aria-label="התמונה הקודמת"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
-  <button class="lb-arrow lb-next" type="button" aria-label="התמונה הבאה"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+  <button class="lb-arrow lb-prev" type="button" aria-label="התמונה הקודמת">${L_ARR}</button>
+  <button class="lb-arrow lb-next" type="button" aria-label="התמונה הבאה">${R_ARR}</button>
 </div>
-<script type="application/json" id="gallery-data">${JSON.stringify(gal.map(k => ({ src: IMG[k].src[2000] || IMG[k].src[1000], alt: (P.alt || {})[IMG[k].n] || d.title, w: IMG[k].w, h: IMG[k].h })))}</script>` : '';
+<script type="application/json" id="gallery-data">${JSON.stringify(gal.map((k, i) => ({ src: IMG[k].src[2000] || IMG[k].src[1000], alt: (P.alt || {})[IMG[k].n] || d.title, w: IMG[k].w, h: IMG[k].h, latin: GI[i].latin || '', he: GI[i].he || '' })))}</script>` : '';
 
   const loc = d.location;
   S.location = loc && K.location ? `
@@ -370,7 +391,7 @@ const vars = {
   url: esc(d.url || ''), og: esc((d.url || '') + 'og.jpg'),
   robots: d.indexable ? '' : '<meta name="robots" content="noindex, nofollow">',
   preload: `<link rel="preload" as="image" imagesrcset="${srcset(K.hero)}" imagesizes="${coverSizes(K.hero)}" fetchpriority="high">`,
-  brand: esc(d.title), brandSub: `${esc(d.type)} · ${esc(d.area)}`,
+  brand: esc(d.title),
   cta: d.agent && d.visit ? `<a class="pill is-hidden" href="${esc(waLink(d.visit.message.replace(' מועד נוח לי: {slot}.', '')))}" target="_blank" rel="noopener">${WA_ICON}<span>לתיאום ביקור</span></a>` : '',
   v: ver,
   ...Object.fromEntries(Object.entries(S).map(([k, v]) => ['section_' + k, v]))

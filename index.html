@@ -25,8 +25,8 @@
 <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 <link rel="preload" as="image" imagesrcset="assets/img/p27-1000.webp 1000w, assets/img/p27-2000.webp 2000w" imagesizes="max(100vw, 163svh)" fetchpriority="high">
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@200;300;400&family=Cormorant+Garamond:wght@300;400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/styles.css?v=c4a81f3a">
-<script>(function(r){r.classList.add('js');var rm=matchMedia('(prefers-reduced-motion: reduce)').matches;if(rm)r.classList.add('rm');try{if(!rm&&!sessionStorage.getItem('intro-seen'))r.classList.add('has-intro')}catch(e){}})(document.documentElement);</script>
+<link rel="stylesheet" href="assets/css/styles.css?v=955317b4">
+<script>(function(r){r.classList.add('js');var rm=matchMedia('(prefers-reduced-motion: reduce)').matches;if(rm)r.classList.add('rm');if(!rm)r.classList.add('has-intro')})(document.documentElement);</script>
 </head>
 <body>
 <a class="skip" href="#visit">דלגו לתיאום ביקור</a>
@@ -34,17 +34,32 @@
 <div class="rings" aria-hidden="true"></div>
 <div class="grain" aria-hidden="true"></div>
 <div class="intro" aria-hidden="true">
-  <div class="intro-in">
-    <p class="intro-title"><span class="ic">א</span><span class="ic">ו</span><span class="ic">ס</span><span class="ic">י</span><span class="ic">ש</span><span class="ic">ק</span><span class="ic">י</span><span class="ic">ן</span><span class="ic sp"> </span><span class="ic"><bdi>10</bdi></span></p>
-    <i class="intro-line"></i>
-    <p class="intro-label" lang="en">USSISHKIN 10 · HERZLIYA</p>
+  <div class="door door-l"></div>
+  <div class="door door-r"></div>
+  <i class="door-seam"></i>
+  <div class="floor">
+    <p class="floor-label" lang="en">FLOOR</p>
+    <p class="floor-num"><span class="floor-col"><span>01</span><span>02</span><span>03</span><span>04</span><span>05</span></span></p>
   </div>
 </div>
 <div class="progress" aria-hidden="true"><i></i></div>
 <header class="topbar">
   <a class="brand" href="#hero">אוסישקין 10</a>
-  <span class="label topbar-sub">מיני פנטהאוז · הרצליה הצעירה</span>
+  <button class="menu-btn" type="button" aria-expanded="false" aria-controls="menu"><span>תפריט</span><i class="burger" aria-hidden="true"><b></b><b></b></i></button>
+  <i class="topbar-line" aria-hidden="true"></i>
 </header>
+<div class="menu" id="menu" role="dialog" aria-modal="true" aria-label="תפריט" hidden>
+  <button class="menu-close" type="button">סגירה <span aria-hidden="true">✕</span></button>
+  <nav class="menu-nav" aria-label="ניווט באתר"><ul>
+    <li><a class="menu-link" href="#view"><span class="menu-en" lang="en">THE VIEW</span><span class="menu-he">הנוף</span></a></li>
+    <li><a class="menu-link" href="#story"><span class="menu-en" lang="en">THE HOME</span><span class="menu-he">הבית</span></a></li>
+    <li><a class="menu-link" href="#onelevel"><span class="menu-en" lang="en">ONE LEVEL</span><span class="menu-he">מפלס אחד</span></a></li>
+    <li><a class="menu-link" href="#price"><span class="menu-en" lang="en">THE PRICE</span><span class="menu-he">מחיר</span></a></li>
+    <li><a class="menu-link" href="#gallery"><span class="menu-en" lang="en">GALLERY</span><span class="menu-he">גלריה</span></a></li>
+    <li><a class="menu-link" href="#location"><span class="menu-en" lang="en">THE LOCATION</span><span class="menu-he">מיקום</span></a></li>
+    <li><a class="menu-link" href="#visit"><span class="menu-en" lang="en">PRIVATE TOUR</span><span class="menu-he">תיאום ביקור</span></a></li>
+  </ul></nav>
+</div>
 <main>
 
 <section class="hero" id="hero" aria-label="אוסישקין 10">
@@ -64,12 +79,18 @@
     </div>
   </div>
   <div class="hero-frame" aria-hidden="true"><span class="fr fr-t"></span><span class="fr fr-l"></span><span class="fr fr-b"></span><span class="fr fr-r"></span></div>
-  <div class="hero-head"><header class="sh hero-sh">
-    <p class="sh-label" lang="en">USSISHKIN 10 · HERZLIYA</p>
-    <h1 class="sh-title" data-lines><span class="ln"><span>אוסישקין</span></span> <span class="ln"><span><bdi>10</bdi></span></span></h1>
-    <i class="sh-rule" aria-hidden="true"></i>
-  </header></div>
-  <div class="hero-hint" aria-hidden="true"><span>גלול</span><i></i></div>
+  <div class="hero-head">
+    <p class="hero-label label-en" lang="en">USSISHKIN 10 · HERZLIYA</p>
+    <h1 class="hero-title">אוסישקין <bdi>10</bdi></h1>
+    <p class="hero-meta"><span class="nw">מיני פנטהאוז</span><i class="dot" aria-hidden="true"></i><span class="nw"><bdi>6</bdi> חד׳</span><i class="dot" aria-hidden="true"></i><span class="nw"><bdi>170</bdi> מ״ר + <bdi>50</bdi> מ״ר מרפסת</span><i class="dot" aria-hidden="true"></i><span class="nw">קומה <bdi>5</bdi></span></p>
+    <p class="hero-price"><span class="hero-price-label">מחיר מבוקש</span><span class="hero-price-num num" dir="ltr">₪5,990,000</span></p>
+    <i class="hero-rule" aria-hidden="true"></i>
+  </div>
+  <p class="hero-cap" aria-hidden="true"><span class="hero-cap-in"><b class="num">05</b> · קומה</span></p>
+  <div class="hero-bottom"><div class="hero-bottom-in">
+    <a class="hero-tour" href="#view"><i aria-hidden="true"></i>לסיור בבית <span aria-hidden="true">↓</span></a>
+    <p class="hero-note">בבלעדיות · בוטיק נדל״ן</p>
+  </div></div>
 </section>
 
 <section class="story" id="story" aria-label="החדרים">
@@ -100,24 +121,6 @@
     <div class="frame story-frame"><span class="fr-lines" aria-hidden="true"><span class="fr fr-t"></span><span class="fr fr-l"></span><span class="fr fr-b"></span><span class="fr fr-r"></span></span><div class="frame-in"><img data-src="assets/img/p9-1000.webp" data-srcset="assets/img/p9-1000.webp 1000w, assets/img/p9-2000.webp 2000w" sizes="(min-width: 900px) 64vw, calc(100vw - 48px)" width="1046" height="645" alt="יחידת ההורים, חדר השינה" style="object-position:50% 50%" loading="lazy" decoding="async"></div></div>
     <p class="story-line">יחידת הורים. שקט.</p>
   </article>
-  </div>
-</section>
-
-<section class="details" id="details" aria-label="בפרטים הקטנים.">
-  <header class="sh">
-    <p class="sh-label" lang="en">THE DETAILS</p>
-    <h2 class="sh-title" data-lines><span class="ln"><span>בפרטים</span></span> <span class="ln"><span>הקטנים.</span></span></h2>
-    <i class="sh-rule" aria-hidden="true"></i>
-  </header>
-  <div class="details-list">
-    <figure class="detail">
-      <div class="frame frame-45" data-reveal><span class="fr-lines" aria-hidden="true"><span class="fr fr-t"></span><span class="fr fr-l"></span><span class="fr fr-b"></span><span class="fr fr-r"></span></span><div class="frame-in"><img src="assets/img/p8c-1000.webp" srcset="assets/img/p8c-1000.webp 1000w" sizes="(min-width: 900px) 34vw, calc(100vw - 48px)" width="422" height="527" alt="פינת האיפור עם המראה המוארת" style="object-position:50% 50%" loading="lazy" decoding="async"></div></div>
-      <figcaption class="detail-line" data-fade>פינת איפור עם מראה מוארת.</figcaption>
-    </figure>
-    <figure class="detail">
-      <div class="frame frame-45" data-reveal><span class="fr-lines" aria-hidden="true"><span class="fr fr-t"></span><span class="fr fr-l"></span><span class="fr fr-b"></span><span class="fr fr-r"></span></span><div class="frame-in"><img src="assets/img/p10c-1000.webp" srcset="assets/img/p10c-1000.webp 1000w" sizes="(min-width: 900px) 34vw, calc(100vw - 48px)" width="592" height="740" alt="מקלחון ביחידת ההורים" style="object-position:50% 50%" loading="lazy" decoding="async"></div></div>
-      <figcaption class="detail-line" data-fade>חיפוי בדמוי עץ, מהרצפה עד התקרה.</figcaption>
-    </figure>
   </div>
 </section>
 
@@ -197,42 +200,48 @@
 </section>
 
 <section class="gallery" id="gallery" aria-label="כל התמונות">
-  <div class="gal-head">
-    <header class="sh">
+  <div class="gal-head"><header class="sh">
     <p class="sh-label" lang="en">GALLERY</p>
     <h2 class="sh-title" data-lines><span class="ln"><span>כל</span></span> <span class="ln"><span>התמונות</span></span></h2>
     <i class="sh-rule" aria-hidden="true"></i>
-  </header>
-    <p class="gal-count" data-fade><span class="num">13</span> תמונות</p>
+  </header></div>
+  <div class="cf">
+    <div class="cf-track" dir="ltr" tabindex="0" aria-roledescription="carousel" aria-label="גלריה, החליקו לצדדים">
+      <div class="cf-slide is-on" data-i="0"><button class="cf-card" type="button" aria-label="הבניין: הבניין ברחוב אוסישקין והפיקוס בכניסה"><div class="frame"><span class="fr-lines" aria-hidden="true"><span class="fr fr-t"></span><span class="fr fr-l"></span><span class="fr fr-b"></span><span class="fr fr-r"></span></span><div class="frame-in"><img src="assets/img/p30-1000.webp" srcset="assets/img/p30-1000.webp 1000w, assets/img/p30-2000.webp 2000w" sizes="(min-width: 900px) 46vw, 72vw" width="1622" height="1000" alt="הבניין ברחוב אוסישקין והפיקוס בכניסה" style="object-position:62% 50%" loading="lazy" decoding="async"><span class="cf-dim"></span></div></div></button></div>
+      <div class="cf-slide" data-i="1"><button class="cf-card" type="button" aria-label="המרפסת: המרפסת, מבט אל הצמרות"><div class="frame"><span class="fr-lines" aria-hidden="true"><span class="fr fr-t"></span><span class="fr fr-l"></span><span class="fr fr-b"></span><span class="fr fr-r"></span></span><div class="frame-in"><img src="assets/img/p24-1000.webp" srcset="assets/img/p24-1000.webp 1000w, assets/img/p24-2000.webp 2000w" sizes="(min-width: 900px) 46vw, 72vw" width="1622" height="1000" alt="המרפסת, מבט אל הצמרות" style="object-position:50% 55%" loading="lazy" decoding="async"><span class="cf-dim"></span></div></div></button></div>
+      <div class="cf-slide" data-i="2"><button class="cf-card" type="button" aria-label="המרפסת: המרפסת, מבט פנימה אל הדירה"><div class="frame"><span class="fr-lines" aria-hidden="true"><span class="fr fr-t"></span><span class="fr fr-l"></span><span class="fr fr-b"></span><span class="fr fr-r"></span></span><div class="frame-in"><img src="assets/img/p26-1000.webp" srcset="assets/img/p26-1000.webp 1000w, assets/img/p26-2000.webp 2000w" sizes="(min-width: 900px) 46vw, 72vw" width="1622" height="1000" alt="המרפסת, מבט פנימה אל הדירה" style="object-position:50% 55%" loading="lazy" decoding="async"><span class="cf-dim"></span></div></div></button></div>
+      <div class="cf-slide" data-i="3"><button class="cf-card" type="button" aria-label="המרפסת: המרפסת המקורה ופינת הישיבה"><div class="frame"><span class="fr-lines" aria-hidden="true"><span class="fr fr-t"></span><span class="fr fr-l"></span><span class="fr fr-b"></span><span class="fr fr-r"></span></span><div class="frame-in"><img src="assets/img/p29-1000.webp" srcset="assets/img/p29-1000.webp 1000w, assets/img/p29-2000.webp 2000w" sizes="(min-width: 900px) 46vw, 72vw" width="1622" height="1000" alt="המרפסת המקורה ופינת הישיבה" style="object-position:50% 50%" loading="lazy" decoding="async"><span class="cf-dim"></span></div></div></button></div>
+      <div class="cf-slide" data-i="4"><button class="cf-card" type="button" aria-label="הסלון: הסלון, ספה וחלונות אל הירוק"><div class="frame"><span class="fr-lines" aria-hidden="true"><span class="fr fr-t"></span><span class="fr fr-l"></span><span class="fr fr-b"></span><span class="fr fr-r"></span></span><div class="frame-in"><img src="assets/img/p16-1000.webp" srcset="assets/img/p16-1000.webp 1000w, assets/img/p16-2000.webp 2000w" sizes="(min-width: 900px) 46vw, 72vw" width="1622" height="1000" alt="הסלון, ספה וחלונות אל הירוק" style="object-position:50% 50%" loading="lazy" decoding="async"><span class="cf-dim"></span></div></div></button></div>
+      <div class="cf-slide" data-i="5"><button class="cf-card" type="button" aria-label="הסלון: הסלון, מבט אל החלונות והמרפסת"><div class="frame"><span class="fr-lines" aria-hidden="true"><span class="fr fr-t"></span><span class="fr fr-l"></span><span class="fr fr-b"></span><span class="fr fr-r"></span></span><div class="frame-in"><img src="assets/img/p12-1000.webp" srcset="assets/img/p12-1000.webp 1000w, assets/img/p12-2000.webp 2000w" sizes="(min-width: 900px) 46vw, 72vw" width="1622" height="1000" alt="הסלון, מבט אל החלונות והמרפסת" style="object-position:50% 50%" loading="lazy" decoding="async"><span class="cf-dim"></span></div></div></button></div>
+      <div class="cf-slide" data-i="6"><button class="cf-card" type="button" aria-label="הסלון: הסלון והמטבח, והמרפסת באותו מפלס"><div class="frame"><span class="fr-lines" aria-hidden="true"><span class="fr fr-t"></span><span class="fr fr-l"></span><span class="fr fr-b"></span><span class="fr fr-r"></span></span><div class="frame-in"><img src="assets/img/p22-1000.webp" srcset="assets/img/p22-1000.webp 1000w, assets/img/p22-2000.webp 2000w" sizes="(min-width: 900px) 46vw, 72vw" width="1622" height="1000" alt="הסלון והמטבח, והמרפסת באותו מפלס" style="object-position:55% 55%" loading="lazy" decoding="async"><span class="cf-dim"></span></div></div></button></div>
+      <div class="cf-slide" data-i="7"><button class="cf-card" type="button" aria-label="המטבח: המטבח עם האי, פתוח אל המרפסת"><div class="frame"><span class="fr-lines" aria-hidden="true"><span class="fr fr-t"></span><span class="fr fr-l"></span><span class="fr fr-b"></span><span class="fr fr-r"></span></span><div class="frame-in"><img src="assets/img/p18-1000.webp" srcset="assets/img/p18-1000.webp 1000w, assets/img/p18-2000.webp 2000w" sizes="(min-width: 900px) 46vw, 72vw" width="1622" height="1000" alt="המטבח עם האי, פתוח אל המרפסת" style="object-position:50% 55%" loading="lazy" decoding="async"><span class="cf-dim"></span></div></div></button></div>
+      <div class="cf-slide" data-i="8"><button class="cf-card" type="button" aria-label="המטבח: האי במטבח עם כיסאות בר"><div class="frame"><span class="fr-lines" aria-hidden="true"><span class="fr fr-t"></span><span class="fr fr-l"></span><span class="fr fr-b"></span><span class="fr fr-r"></span></span><div class="frame-in"><img src="assets/img/p20-1000.webp" srcset="assets/img/p20-1000.webp 1000w, assets/img/p20-2000.webp 2000w" sizes="(min-width: 900px) 46vw, 72vw" width="1622" height="1000" alt="האי במטבח עם כיסאות בר" style="object-position:50% 50%" loading="lazy" decoding="async"><span class="cf-dim"></span></div></div></button></div>
+      <div class="cf-slide" data-i="9"><button class="cf-card" type="button" aria-label="יחידת ההורים: יחידת ההורים, חדר השינה"><div class="frame"><span class="fr-lines" aria-hidden="true"><span class="fr fr-t"></span><span class="fr fr-l"></span><span class="fr fr-b"></span><span class="fr fr-r"></span></span><div class="frame-in"><img src="assets/img/p9-1000.webp" srcset="assets/img/p9-1000.webp 1000w, assets/img/p9-2000.webp 2000w" sizes="(min-width: 900px) 46vw, 72vw" width="1046" height="645" alt="יחידת ההורים, חדר השינה" style="object-position:50% 50%" loading="lazy" decoding="async"><span class="cf-dim"></span></div></div></button></div>
+      <div class="cf-slide" data-i="10"><button class="cf-card" type="button" aria-label="חדר שינה: פינת האיפור עם המראה המוארת"><div class="frame"><span class="fr-lines" aria-hidden="true"><span class="fr fr-t"></span><span class="fr fr-l"></span><span class="fr fr-b"></span><span class="fr fr-r"></span></span><div class="frame-in"><img src="assets/img/p8-1000.webp" srcset="assets/img/p8-1000.webp 1000w, assets/img/p8-2000.webp 2000w" sizes="(min-width: 900px) 46vw, 72vw" width="1622" height="1000" alt="פינת האיפור עם המראה המוארת" style="object-position:50% 50%" loading="lazy" decoding="async"><span class="cf-dim"></span></div></div></button></div>
+      <div class="cf-slide" data-i="11"><button class="cf-card" type="button" aria-label="חדר רחצה: מקלחון ביחידת ההורים"><div class="frame"><span class="fr-lines" aria-hidden="true"><span class="fr fr-t"></span><span class="fr fr-l"></span><span class="fr fr-b"></span><span class="fr fr-r"></span></span><div class="frame-in"><img src="assets/img/p10-1000.webp" srcset="assets/img/p10-1000.webp 1000w, assets/img/p10-2000.webp 2000w" sizes="(min-width: 900px) 46vw, 72vw" width="1622" height="1000" alt="מקלחון ביחידת ההורים" style="object-position:50% 50%" loading="lazy" decoding="async"><span class="cf-dim"></span></div></div></button></div>
+      <div class="cf-slide" data-i="12"><button class="cf-card" type="button" aria-label="חדר רחצה: חדר רחצה עם כיור על משטח עץ"><div class="frame"><span class="fr-lines" aria-hidden="true"><span class="fr fr-t"></span><span class="fr fr-l"></span><span class="fr fr-b"></span><span class="fr fr-r"></span></span><div class="frame-in"><img src="assets/img/p11-1000.webp" srcset="assets/img/p11-1000.webp 1000w, assets/img/p11-2000.webp 2000w" sizes="(min-width: 900px) 46vw, 72vw" width="1622" height="1000" alt="חדר רחצה עם כיור על משטח עץ" style="object-position:50% 50%" loading="lazy" decoding="async"><span class="cf-dim"></span></div></div></button></div>
+      <div class="cf-slide" data-i="13"><button class="cf-card" type="button" aria-label="חדר רחצה: חדר רחצה עם אמבטיה"><div class="frame"><span class="fr-lines" aria-hidden="true"><span class="fr fr-t"></span><span class="fr fr-l"></span><span class="fr fr-b"></span><span class="fr fr-r"></span></span><div class="frame-in"><img src="assets/img/p3-1000.webp" srcset="assets/img/p3-1000.webp 1000w, assets/img/p3-2000.webp 2000w" sizes="(min-width: 900px) 46vw, 72vw" width="1622" height="1000" alt="חדר רחצה עם אמבטיה" style="object-position:50% 50%" loading="lazy" decoding="async"><span class="cf-dim"></span></div></div></button></div>
+      <div class="cf-slide" data-i="14"><button class="cf-card" type="button" aria-label="הנוף: הנוף מהקומה החמישית מעל העצים"><div class="frame"><span class="fr-lines" aria-hidden="true"><span class="fr fr-t"></span><span class="fr fr-l"></span><span class="fr fr-b"></span><span class="fr fr-r"></span></span><div class="frame-in"><img src="assets/img/p28-1000.webp" srcset="assets/img/p28-1000.webp 1000w, assets/img/p28-2000.webp 2000w" sizes="(min-width: 900px) 46vw, 72vw" width="1622" height="720" alt="הנוף מהקומה החמישית מעל העצים" style="object-position:100% 50%" loading="lazy" decoding="async"><span class="cf-dim"></span></div></div></button></div>
+    </div>
+    <button class="cf-arrow cf-prev" type="button" aria-label="התמונה הקודמת"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+    <button class="cf-arrow cf-next" type="button" aria-label="התמונה הבאה"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
   </div>
-  <div class="gal-strip" tabindex="0" aria-label="גלריה, החליקו לצדדים">
-    <button class="gal-item" type="button" data-i="0" aria-label="פתיחת תמונה 1: הבניין ברחוב אוסישקין והפיקוס בכניסה"><div class="frame"><span class="fr-lines" aria-hidden="true"><span class="fr fr-t"></span><span class="fr fr-l"></span><span class="fr fr-b"></span><span class="fr fr-r"></span></span><div class="frame-in"><img src="assets/img/p30-1000.webp" srcset="assets/img/p30-1000.webp 1000w, assets/img/p30-2000.webp 2000w" sizes="(min-width: 900px) 46vw, 78vw" width="1622" height="1000" alt="הבניין ברחוב אוסישקין והפיקוס בכניסה" style="object-position:62% 50%" loading="lazy" decoding="async"></div></div></button>
-    <button class="gal-item" type="button" data-i="1" aria-label="פתיחת תמונה 2: המרפסת, מבט אל הצמרות"><div class="frame"><span class="fr-lines" aria-hidden="true"><span class="fr fr-t"></span><span class="fr fr-l"></span><span class="fr fr-b"></span><span class="fr fr-r"></span></span><div class="frame-in"><img src="assets/img/p24-1000.webp" srcset="assets/img/p24-1000.webp 1000w, assets/img/p24-2000.webp 2000w" sizes="(min-width: 900px) 46vw, 78vw" width="1622" height="1000" alt="המרפסת, מבט אל הצמרות" style="object-position:50% 55%" loading="lazy" decoding="async"></div></div></button>
-    <button class="gal-item" type="button" data-i="2" aria-label="פתיחת תמונה 3: המרפסת, מבט פנימה אל הדירה"><div class="frame"><span class="fr-lines" aria-hidden="true"><span class="fr fr-t"></span><span class="fr fr-l"></span><span class="fr fr-b"></span><span class="fr fr-r"></span></span><div class="frame-in"><img src="assets/img/p26-1000.webp" srcset="assets/img/p26-1000.webp 1000w, assets/img/p26-2000.webp 2000w" sizes="(min-width: 900px) 46vw, 78vw" width="1622" height="1000" alt="המרפסת, מבט פנימה אל הדירה" style="object-position:50% 55%" loading="lazy" decoding="async"></div></div></button>
-    <button class="gal-item" type="button" data-i="3" aria-label="פתיחת תמונה 4: הסלון, ספה וחלונות אל הירוק"><div class="frame"><span class="fr-lines" aria-hidden="true"><span class="fr fr-t"></span><span class="fr fr-l"></span><span class="fr fr-b"></span><span class="fr fr-r"></span></span><div class="frame-in"><img src="assets/img/p16-1000.webp" srcset="assets/img/p16-1000.webp 1000w, assets/img/p16-2000.webp 2000w" sizes="(min-width: 900px) 46vw, 78vw" width="1622" height="1000" alt="הסלון, ספה וחלונות אל הירוק" style="object-position:50% 50%" loading="lazy" decoding="async"></div></div></button>
-    <button class="gal-item" type="button" data-i="4" aria-label="פתיחת תמונה 5: הסלון, מבט אל החלונות והמרפסת"><div class="frame"><span class="fr-lines" aria-hidden="true"><span class="fr fr-t"></span><span class="fr fr-l"></span><span class="fr fr-b"></span><span class="fr fr-r"></span></span><div class="frame-in"><img src="assets/img/p12-1000.webp" srcset="assets/img/p12-1000.webp 1000w, assets/img/p12-2000.webp 2000w" sizes="(min-width: 900px) 46vw, 78vw" width="1622" height="1000" alt="הסלון, מבט אל החלונות והמרפסת" style="object-position:50% 50%" loading="lazy" decoding="async"></div></div></button>
-    <button class="gal-item" type="button" data-i="5" aria-label="פתיחת תמונה 6: האי במטבח עם כיסאות בר"><div class="frame"><span class="fr-lines" aria-hidden="true"><span class="fr fr-t"></span><span class="fr fr-l"></span><span class="fr fr-b"></span><span class="fr fr-r"></span></span><div class="frame-in"><img src="assets/img/p20-1000.webp" srcset="assets/img/p20-1000.webp 1000w, assets/img/p20-2000.webp 2000w" sizes="(min-width: 900px) 46vw, 78vw" width="1622" height="1000" alt="האי במטבח עם כיסאות בר" style="object-position:50% 50%" loading="lazy" decoding="async"></div></div></button>
-    <button class="gal-item" type="button" data-i="6" aria-label="פתיחת תמונה 7: הסלון והמטבח, והמרפסת באותו מפלס"><div class="frame"><span class="fr-lines" aria-hidden="true"><span class="fr fr-t"></span><span class="fr fr-l"></span><span class="fr fr-b"></span><span class="fr fr-r"></span></span><div class="frame-in"><img src="assets/img/p22-1000.webp" srcset="assets/img/p22-1000.webp 1000w, assets/img/p22-2000.webp 2000w" sizes="(min-width: 900px) 46vw, 78vw" width="1622" height="1000" alt="הסלון והמטבח, והמרפסת באותו מפלס" style="object-position:55% 55%" loading="lazy" decoding="async"></div></div></button>
-    <button class="gal-item" type="button" data-i="7" aria-label="פתיחת תמונה 8: המטבח עם האי, פתוח אל המרפסת"><div class="frame"><span class="fr-lines" aria-hidden="true"><span class="fr fr-t"></span><span class="fr fr-l"></span><span class="fr fr-b"></span><span class="fr fr-r"></span></span><div class="frame-in"><img src="assets/img/p18-1000.webp" srcset="assets/img/p18-1000.webp 1000w, assets/img/p18-2000.webp 2000w" sizes="(min-width: 900px) 46vw, 78vw" width="1622" height="1000" alt="המטבח עם האי, פתוח אל המרפסת" style="object-position:50% 55%" loading="lazy" decoding="async"></div></div></button>
-    <button class="gal-item" type="button" data-i="8" aria-label="פתיחת תמונה 9: מקלחון ביחידת ההורים"><div class="frame"><span class="fr-lines" aria-hidden="true"><span class="fr fr-t"></span><span class="fr fr-l"></span><span class="fr fr-b"></span><span class="fr fr-r"></span></span><div class="frame-in"><img src="assets/img/p10-1000.webp" srcset="assets/img/p10-1000.webp 1000w, assets/img/p10-2000.webp 2000w" sizes="(min-width: 900px) 46vw, 78vw" width="1622" height="1000" alt="מקלחון ביחידת ההורים" style="object-position:50% 50%" loading="lazy" decoding="async"></div></div></button>
-    <button class="gal-item" type="button" data-i="9" aria-label="פתיחת תמונה 10: פינת האיפור עם המראה המוארת"><div class="frame"><span class="fr-lines" aria-hidden="true"><span class="fr fr-t"></span><span class="fr fr-l"></span><span class="fr fr-b"></span><span class="fr fr-r"></span></span><div class="frame-in"><img src="assets/img/p8-1000.webp" srcset="assets/img/p8-1000.webp 1000w, assets/img/p8-2000.webp 2000w" sizes="(min-width: 900px) 46vw, 78vw" width="1622" height="1000" alt="פינת האיפור עם המראה המוארת" style="object-position:50% 50%" loading="lazy" decoding="async"></div></div></button>
-    <button class="gal-item" type="button" data-i="10" aria-label="פתיחת תמונה 11: חדר רחצה עם כיור על משטח עץ"><div class="frame"><span class="fr-lines" aria-hidden="true"><span class="fr fr-t"></span><span class="fr fr-l"></span><span class="fr fr-b"></span><span class="fr fr-r"></span></span><div class="frame-in"><img src="assets/img/p11-1000.webp" srcset="assets/img/p11-1000.webp 1000w, assets/img/p11-2000.webp 2000w" sizes="(min-width: 900px) 46vw, 78vw" width="1622" height="1000" alt="חדר רחצה עם כיור על משטח עץ" style="object-position:50% 50%" loading="lazy" decoding="async"></div></div></button>
-    <button class="gal-item" type="button" data-i="11" aria-label="פתיחת תמונה 12: חדר רחצה עם אמבטיה"><div class="frame"><span class="fr-lines" aria-hidden="true"><span class="fr fr-t"></span><span class="fr fr-l"></span><span class="fr fr-b"></span><span class="fr fr-r"></span></span><div class="frame-in"><img src="assets/img/p3-1000.webp" srcset="assets/img/p3-1000.webp 1000w, assets/img/p3-2000.webp 2000w" sizes="(min-width: 900px) 46vw, 78vw" width="1622" height="1000" alt="חדר רחצה עם אמבטיה" style="object-position:50% 50%" loading="lazy" decoding="async"></div></div></button>
-    <button class="gal-item" type="button" data-i="12" aria-label="פתיחת תמונה 13: המרפסת המקורה ופינת הישיבה"><div class="frame"><span class="fr-lines" aria-hidden="true"><span class="fr fr-t"></span><span class="fr fr-l"></span><span class="fr fr-b"></span><span class="fr fr-r"></span></span><div class="frame-in"><img src="assets/img/p29-1000.webp" srcset="assets/img/p29-1000.webp 1000w, assets/img/p29-2000.webp 2000w" sizes="(min-width: 900px) 46vw, 78vw" width="1622" height="1000" alt="המרפסת המקורה ופינת הישיבה" style="object-position:50% 50%" loading="lazy" decoding="async"></div></div></button>
+  <div class="cf-meta">
+    <div class="cf-cap"><p class="cf-en label-en" lang="en">THE BUILDING</p><p class="cf-he">הבניין</p></div>
+    <p class="cf-count" dir="ltr"><b class="cf-now">01</b><span class="cf-of"> / 15</span></p>
   </div>
-  <div class="gal-nav">
-    <button class="gal-arrow" type="button" data-dir="prev" aria-label="התמונה הקודמת"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
-    <button class="gal-arrow" type="button" data-dir="next" aria-label="התמונה הבאה"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+  <div class="cf-bar" dir="ltr">
+    <button class="cf-seg is-on" type="button" data-i="0" aria-label="תמונה 1 מתוך 15"><i></i></button><button class="cf-seg" type="button" data-i="1" aria-label="תמונה 2 מתוך 15"><i></i></button><button class="cf-seg" type="button" data-i="2" aria-label="תמונה 3 מתוך 15"><i></i></button><button class="cf-seg" type="button" data-i="3" aria-label="תמונה 4 מתוך 15"><i></i></button><button class="cf-seg" type="button" data-i="4" aria-label="תמונה 5 מתוך 15"><i></i></button><button class="cf-seg" type="button" data-i="5" aria-label="תמונה 6 מתוך 15"><i></i></button><button class="cf-seg" type="button" data-i="6" aria-label="תמונה 7 מתוך 15"><i></i></button><button class="cf-seg" type="button" data-i="7" aria-label="תמונה 8 מתוך 15"><i></i></button><button class="cf-seg" type="button" data-i="8" aria-label="תמונה 9 מתוך 15"><i></i></button><button class="cf-seg" type="button" data-i="9" aria-label="תמונה 10 מתוך 15"><i></i></button><button class="cf-seg" type="button" data-i="10" aria-label="תמונה 11 מתוך 15"><i></i></button><button class="cf-seg" type="button" data-i="11" aria-label="תמונה 12 מתוך 15"><i></i></button><button class="cf-seg" type="button" data-i="12" aria-label="תמונה 13 מתוך 15"><i></i></button><button class="cf-seg" type="button" data-i="13" aria-label="תמונה 14 מתוך 15"><i></i></button><button class="cf-seg" type="button" data-i="14" aria-label="תמונה 15 מתוך 15"><i></i></button>
   </div>
 </section>
 <div class="lightbox" role="dialog" aria-modal="true" aria-label="תמונות הדירה" hidden>
   <button class="lb-close" type="button" aria-label="סגירה"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
-  <div class="lb-track"></div>
+  <div class="lb-track" dir="ltr"></div>
   <p class="lb-count num" dir="ltr"></p>
-  <button class="lb-arrow lb-prev" type="button" aria-label="התמונה הקודמת"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
-  <button class="lb-arrow lb-next" type="button" aria-label="התמונה הבאה"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+  <button class="lb-arrow lb-prev" type="button" aria-label="התמונה הקודמת"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+  <button class="lb-arrow lb-next" type="button" aria-label="התמונה הבאה"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
 </div>
-<script type="application/json" id="gallery-data">[{"src":"assets/img/p30-2000.webp","alt":"הבניין ברחוב אוסישקין והפיקוס בכניסה","w":1622,"h":1000},{"src":"assets/img/p24-2000.webp","alt":"המרפסת, מבט אל הצמרות","w":1622,"h":1000},{"src":"assets/img/p26-2000.webp","alt":"המרפסת, מבט פנימה אל הדירה","w":1622,"h":1000},{"src":"assets/img/p16-2000.webp","alt":"הסלון, ספה וחלונות אל הירוק","w":1622,"h":1000},{"src":"assets/img/p12-2000.webp","alt":"הסלון, מבט אל החלונות והמרפסת","w":1622,"h":1000},{"src":"assets/img/p20-2000.webp","alt":"האי במטבח עם כיסאות בר","w":1622,"h":1000},{"src":"assets/img/p22-2000.webp","alt":"הסלון והמטבח, והמרפסת באותו מפלס","w":1622,"h":1000},{"src":"assets/img/p18-2000.webp","alt":"המטבח עם האי, פתוח אל המרפסת","w":1622,"h":1000},{"src":"assets/img/p10-2000.webp","alt":"מקלחון ביחידת ההורים","w":1622,"h":1000},{"src":"assets/img/p8-2000.webp","alt":"פינת האיפור עם המראה המוארת","w":1622,"h":1000},{"src":"assets/img/p11-2000.webp","alt":"חדר רחצה עם כיור על משטח עץ","w":1622,"h":1000},{"src":"assets/img/p3-2000.webp","alt":"חדר רחצה עם אמבטיה","w":1622,"h":1000},{"src":"assets/img/p29-2000.webp","alt":"המרפסת המקורה ופינת הישיבה","w":1622,"h":1000}]</script>
+<script type="application/json" id="gallery-data">[{"src":"assets/img/p30-2000.webp","alt":"הבניין ברחוב אוסישקין והפיקוס בכניסה","w":1622,"h":1000,"latin":"THE BUILDING","he":"הבניין"},{"src":"assets/img/p24-2000.webp","alt":"המרפסת, מבט אל הצמרות","w":1622,"h":1000,"latin":"TERRACE","he":"המרפסת"},{"src":"assets/img/p26-2000.webp","alt":"המרפסת, מבט פנימה אל הדירה","w":1622,"h":1000,"latin":"TERRACE","he":"המרפסת"},{"src":"assets/img/p29-2000.webp","alt":"המרפסת המקורה ופינת הישיבה","w":1622,"h":1000,"latin":"TERRACE","he":"המרפסת"},{"src":"assets/img/p16-2000.webp","alt":"הסלון, ספה וחלונות אל הירוק","w":1622,"h":1000,"latin":"LIVING","he":"הסלון"},{"src":"assets/img/p12-2000.webp","alt":"הסלון, מבט אל החלונות והמרפסת","w":1622,"h":1000,"latin":"LIVING","he":"הסלון"},{"src":"assets/img/p22-2000.webp","alt":"הסלון והמטבח, והמרפסת באותו מפלס","w":1622,"h":1000,"latin":"LIVING","he":"הסלון"},{"src":"assets/img/p18-2000.webp","alt":"המטבח עם האי, פתוח אל המרפסת","w":1622,"h":1000,"latin":"KITCHEN","he":"המטבח"},{"src":"assets/img/p20-2000.webp","alt":"האי במטבח עם כיסאות בר","w":1622,"h":1000,"latin":"KITCHEN","he":"המטבח"},{"src":"assets/img/p9-2000.webp","alt":"יחידת ההורים, חדר השינה","w":1046,"h":645,"latin":"SUITE","he":"יחידת ההורים"},{"src":"assets/img/p8-2000.webp","alt":"פינת האיפור עם המראה המוארת","w":1622,"h":1000,"latin":"BEDROOM","he":"חדר שינה"},{"src":"assets/img/p10-2000.webp","alt":"מקלחון ביחידת ההורים","w":1622,"h":1000,"latin":"BATH","he":"חדר רחצה"},{"src":"assets/img/p11-2000.webp","alt":"חדר רחצה עם כיור על משטח עץ","w":1622,"h":1000,"latin":"BATH","he":"חדר רחצה"},{"src":"assets/img/p3-2000.webp","alt":"חדר רחצה עם אמבטיה","w":1622,"h":1000,"latin":"BATH","he":"חדר רחצה"},{"src":"assets/img/p28-2000.webp","alt":"הנוף מהקומה החמישית מעל העצים","w":1622,"h":720,"latin":"THE VIEW","he":"הנוף"}]</script>
 
 <section class="location" id="location" aria-label="מיקום">
   <header class="sh">
@@ -279,6 +288,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
 <script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js" defer></script>
-<script src="assets/js/main.js?v=c4a81f3a" defer></script>
+<script src="assets/js/main.js?v=955317b4" defer></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-/* Listing template · motion: intro · hero → card → view · framed reveals · pinned story / strip · price odometer + rings. */
+/* Listing template · motion: elevator intro · hero card → view · menu · framed reveals · pinned story / strip · price odometer + rings. */
 (() => {
   'use strict';
   const $ = (s, r = document) => r.querySelector(s);
@@ -39,8 +39,26 @@
   fitAll();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitAll);
 
-  /* ---------------- lightbox (works with or without GSAP) ---------------- */
-  let lenis = null;
+  /* ---------------- in-page navigation · menu · gallery (work with or without GSAP) ---------------- */
+  let lenis = null, heroST = null;
+  const VIEW_AT = 0.62;   // where "the view" headline is fully in, as a fraction of the hero pin
+  const pad2 = n => String(n).padStart(2, '0');
+  function scrollToHash(hash) {
+    const t = hash && hash.length > 1 && $(hash);
+    if (!t) return false;
+    let y;
+    if (hash === '#hero') y = 0;
+    else if (hash === '#view' && heroST) y = heroST.start + (heroST.end - heroST.start) * VIEW_AT;
+    else { const box = t.parentElement && t.parentElement.classList.contains('pin-spacer') ? t.parentElement : t; y = box.getBoundingClientRect().top + scrollY; }
+    if (lenis) lenis.scrollTo(y, { duration: 1.6 }); else scrollTo({ top: y, behavior: reduce ? 'auto' : 'smooth' });
+    return true;
+  }
+  document.addEventListener('click', e => {
+    const a = e.target.closest && e.target.closest('a[href^="#"]');
+    if (!a || a.closest('.menu')) return;
+    if (scrollToHash(a.getAttribute('href'))) e.preventDefault();
+  });
+  initMenu();
   initGallery();
 
   /* ---------------- top bar · progress · light wash · rings parallax (plain scroll listeners: cheap) ---------------- */
@@ -56,7 +74,7 @@
     prog.style.transform = `scaleX(${max > 0 ? Math.min(1, y / max) : 0})`;
     if (ringsEl && !reduce) ringsEl.style.transform = `translate3d(0, ${(-y * 0.1).toFixed(1)}px, 0)`;
     const pastHero = hero ? y > heroEnd() - 60 : true;
-    bar.classList.toggle('is-solid', pastHero);
+    bar.classList.toggle('is-solid', y > 40);
     if (Math.abs(y - lastY) > 6) { bar.classList.toggle('is-up', y > lastY && y > 120 && pastHero); lastY = y; }
     if (facts) {
       // light section: crossfade in over its first ~30%, back out over its last ~25%
@@ -74,7 +92,7 @@
   const pill = $('.pill');
   const noPillZones = ['#hero', '#story', '#onelevel'].map(s => $(s)).filter(Boolean);
   const visit = $('#visit');
-  const guard = $$('.sh, .story-line, .price-sub, .extras, .loc-line, .text-link, .detail-line, .ol-sub');
+  const guard = $$('.sh, .story-line, .price-sub, .extras, .loc-line, .text-link, .ol-sub, .cf-meta, .cf-bar');
   const frames = $$('.frame').filter(f => !f.closest('#story, #onelevel'));
   let pillHidden = true;
   function updatePill() {
@@ -127,10 +145,6 @@
     lenis.on('scroll', ScrollTrigger.update);
     gsap.ticker.add(t => lenis.raf(t * 1000));
     gsap.ticker.lagSmoothing(0);
-    $$('a[href^="#"]').forEach(a => a.addEventListener('click', e => {
-      const t = $(a.getAttribute('href')); if (!t) return;
-      e.preventDefault(); lenis.scrollTo(t, { duration: 1.6 });
-    }));
   }
   addEventListener('scroll', onScroll, { passive: true });
 
@@ -178,99 +192,107 @@
     gsap.fromTo(im, { scale: 1 }, { scale: 1.05, ease: 'none', scrollTrigger: { trigger: fr, start: 'top 80%', end: 'bottom top', scrub: true } });
   });
 
-  /* ---------------- signature moments: intro, then hero → card → the view ---------------- */
+  /* ---------------- signature moments: the elevator, then the hero card → the view ---------------- */
   if (hero) {
-    const clip = $('.hero-clip', hero), himg = $('.hero-img', hero), hshade = $('.hero-shade', hero);
-    const hhead = $('.hero-head', hero), hint = $('.hero-hint', hero), hframe = $('.hero-frame', hero);
+    const clip = $('.hero-clip', hero), hcard = $('.hero-card', hero), himg = $('.hero-img', hero), hshade = $('.hero-shade', hero);
+    const hhead = $('.hero-head', hero), hframe = $('.hero-frame', hero), hcap = $('.hero-cap', hero), hbottom = $('.hero-bottom', hero);
     const view = $('.view', hero), vimg = $('.view-img', hero), vshade = $('.view-shade', hero), vsub = $('.view-sub', hero);
     const vsh = view && $('.view-text .sh', view);
 
-    // the card: framed, centred under the title (4:5 on phones, the photo's ratio on wide screens)
+    // the card: framed, between the hero texts and the bottom row (tall on phones, the photo's ratio on wide screens)
     const rect = () => {
-      const vw = innerWidth, vh = innerHeight, wide = vw >= 900 && vw > vh;
-      const top = hhead.offsetTop + hhead.offsetHeight + (wide ? 36 : 30);
-      const avail = vh - top - (wide ? 56 : 44);
+      const vw = hero.clientWidth, H = hero.offsetHeight, wide = vw >= 900 && vw > innerHeight;
+      const top = hhead.offsetTop + hhead.offsetHeight + (wide ? 34 : 24);
+      const bottom = (hbottom ? hbottom.offsetTop : H - 44) - (wide ? 30 : 20);
+      const avail = Math.max(120, bottom - top);
       let w = wide ? Math.min(vw * 0.52, 980) : vw - 48;
-      let h = wide ? w * 1000 / 1622 : w * 5 / 4;
-      if (h > avail) { h = avail; w = wide ? h * 1622 / 1000 : Math.min(w, h * 4 / 5); }
-      return { x: (vw - w) / 2, y: top + (avail - h) / 2, w, h };
+      let h = wide ? w * 1000 / 1622 : Math.min(avail, w * 1.6);
+      if (h > avail) { h = avail; if (wide) w = h * 1622 / 1000; }
+      return { x: (vw - w) / 2, y: top + (avail - h) / 2, w, h, vw, H };
     };
-    // the photo shrinks with the card (around the card's centre) but always still covers it
-    const imgScale = () => {
-      const r = rect(), vw = innerWidth, vh = innerHeight, cy = r.y + r.h / 2;
-      return Math.min(1, Math.max(r.w / vw, r.h / 2 / cy, r.h / 2 / (vh - cy)) * 1.04);
-    };
+    const cardClip = () => { const r = rect(); return `inset(${r.y}px ${r.vw - r.x - r.w}px ${r.H - r.y - r.h}px ${r.x}px)`; };
+    // the photo is shrunk with the card (around the card's centre) but always still covers it
+    const imgScale = () => { const r = rect(), cy = r.y + r.h / 2; return Math.min(1, Math.max(r.w / r.vw, r.h / 2 / cy, r.h / 2 / (r.H - cy)) * 1.04); };
     const place = () => {
-      const r = rect();
+      const r = rect(), origin = `${r.vw / 2}px ${r.y + r.h / 2}px`;
       gsap.set(hframe, { left: r.x - 10, top: r.y - 10, width: r.w + 20, height: r.h + 20 });
-      gsap.set(himg, { transformOrigin: `${innerWidth / 2}px ${r.y + r.h / 2}px` });
+      gsap.set([himg, hcard], { transformOrigin: origin });
+      if (hcap) gsap.set(hcap, { top: r.y + 14, right: r.vw - r.x - r.w + 14 });
     };
     place();
     ScrollTrigger.addEventListener('refreshInit', place);
-    hideFrame(hframe);
+    gsap.set(hshade, { opacity: 0 });
 
-    const entrance = () => {
-      const t = gsap.timeline();
-      t.fromTo(himg, { scale: 1.08 }, { scale: 1, duration: 1.6, ease: 'power3.out' }, 0)
-        .add(revealHead($('.sh', hhead)), 0.2)
-        .fromTo(hint, { opacity: 0 }, { opacity: 0.85, duration: 0.6 }, 1.1);
+    // scroll: the card grows back to full screen and 27 crossfades into 28 (you stood up and looked out), then the view pans
+    const tl = gsap.timeline({
+      defaults: { ease: 'none' },
+      scrollTrigger: { trigger: hero, start: 'top top', end: () => '+=' + Math.round(innerHeight * 2.5), pin: true, scrub: 0.6, invalidateOnRefresh: true, anticipatePin: 1 }
+    });
+    heroST = tl.scrollTrigger;
+    tl.fromTo(hframe, { opacity: 1 }, { opacity: 0, duration: 0.2 }, 0)
+      .fromTo([hcap, hbottom].filter(Boolean), { opacity: 1 }, { opacity: 0, duration: 0.2 }, 0)
+      .fromTo(hhead, { opacity: 1, y: 0 }, { opacity: 0, y: -40, duration: 0.4 }, 0)
+      .fromTo(clip, { clipPath: () => cardClip() }, { clipPath: 'inset(0px 0px 0px 0px)', duration: 1, ease: 'power1.inOut' }, 0)
+      .fromTo(himg, { scale: () => imgScale() }, { scale: 1.04, duration: 1, ease: 'power1.inOut' }, 0);
+    if (view) {
+      // the view: pan right → left over the treetops, headline at the bottom
+      tl.fromTo(view, { opacity: 0 }, { opacity: 1, duration: 0.7 }, 0.15)
+        .fromTo(vimg, { x: 0 }, { x: () => Math.max(0, vimg.offsetWidth - innerWidth), duration: 2.3 }, 0.1)
+        .fromTo(vshade, { opacity: 0 }, { opacity: 1, duration: 0.4 }, 0.85);
+      if (vsh) {
+        const lab = $('.sh-label', vsh), lns = $$('.ln > span', vsh), rule = $('.sh-rule', vsh);
+        tl.fromTo(lab, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.25, ease: 'power2.out' }, 0.95)
+          .fromTo(lns, { yPercent: 105, y: 0 }, { yPercent: 0, duration: 0.3, stagger: 0.06, ease: 'power3.out' }, 1.0)
+          .fromTo(rule, { scaleX: 0 }, { scaleX: 1, duration: 0.3, ease: 'power2.inOut' }, 1.15);
+      }
+      if (vsub) tl.fromTo(vsub, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' }, 1.3);
+    }
+    tl.to({}, { duration: 0.25 }, 2.4);
+
+    // the hero arriving: frame draws around 27 while it settles (1.06 → 1), then the texts cascade in reading order
+    const heroIn = (t, at) => {
+      const r = rect(), k = at + 0.4, S = 0.08;
+      hideFrame(hframe);
+      drawFrame(t, hframe, at, 0.6, r.w + 20, r.h + 20);
+      t.fromTo(hcard, { scale: 1.06 }, { scale: 1, duration: 0.9, ease: 'power2.out' }, at);
+      const rise = (els, i) => { els = [].concat(els).filter(Boolean); if (els.length) t.fromTo(els, { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, k + i * S); };
+      const draw = (el, i) => { if (el) t.fromTo(el, { scaleX: 0 }, { scaleX: 1, duration: 0.55, ease: 'power2.inOut' }, k + i * S); };
+      rise([$('.brand', bar), $('.menu-btn', bar)], 0); draw($('.topbar-line', bar), 0);
+      rise($('.hero-label', hero), 1); rise($('.hero-title', hero), 2); rise($('.hero-meta', hero), 3); rise($('.hero-price', hero), 4);
+      draw($('.hero-rule', hero), 5); rise($('.hero-bottom-in', hero), 6);
+      if (hcap) t.fromTo($('.hero-cap-in', hcap), { opacity: 0 }, { opacity: 1, duration: 0.5 }, at + 0.45);
     };
 
     const intro = $('div.intro');
     if (root.classList.contains('has-intro') && intro) {
-      try { sessionStorage.setItem('intro-seen', '1'); } catch (e) { /* private mode */ }
       intro.style.animation = 'none';
+      const fl = $('.floor', intro), col = $('.floor-col', intro), seam = $('.door-seam', intro);
+      const n = $$('.floor-col > span', intro).length, steps = n - 1;
       let done = false;
-      const evs = ['wheel', 'touchmove', 'keydown'];
-      const skip = () => itl.timeScale(5);
+      const evs = ['wheel', 'touchstart', 'pointerdown', 'keydown'];
+      const skip = () => { if (!done) itl.progress(1); };
       const end = () => { if (done) return; done = true; evs.forEach(e => removeEventListener(e, skip)); root.classList.remove('has-intro'); intro.remove(); };
-      const itl = gsap.timeline({ onComplete: end })
-        .fromTo($('.intro-line', intro), { scaleX: 0 }, { scaleX: 1, duration: 0.5, ease: 'power2.inOut' }, 0)
-        .fromTo($$('.ic', intro), { yPercent: 110, y: 0 }, { yPercent: 0, duration: 0.55, stagger: 0.04, ease: 'power3.out' }, 0.3)
-        .fromTo($('.intro-label', intro), { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.45 }, 0.7)
-        .call(entrance, null, 1.15)
-        .to(intro, { opacity: 0, duration: 0.45, ease: 'power2.inOut' }, 1.15);
+      const itl = gsap.timeline({ onComplete: end });
+      // 0–0.4 doors closed, the display lights · 0.4–1.4 the floor counts up, slowing on the last step
+      itl.fromTo(fl, { opacity: 0 }, { opacity: 1, duration: 0.3, ease: 'power1.out' }, 0.05);
+      let at = 0.4;
+      for (let k = 1; k <= steps; k++) {
+        const last = k === steps, dur = steps === 1 ? 1 : last ? 0.36 : 0.64 / (steps - 1);
+        itl.to(col, { yPercent: -100 * k / n, duration: dur, ease: last ? 'power3.out' : 'power2.inOut' }, at);
+        at += dur;
+      }
+      // it lands: the seam brightens · 1.4–2.0 the doors part
+      itl.to(seam, { opacity: 1, duration: 0.08, ease: 'none' }, 1.38)
+        .to(seam, { opacity: 0, duration: 0.2, ease: 'power1.in' }, 1.5)
+        .to(fl, { opacity: 0, duration: 0.25, ease: 'power1.in' }, 1.4)
+        .to($('.door-l', intro), { xPercent: -100, duration: 0.6, ease: 'power3.inOut' }, 1.4)
+        .to($('.door-r', intro), { xPercent: 100, duration: 0.6, ease: 'power3.inOut' }, 1.4);
+      heroIn(itl, 1.4);
       evs.forEach(e => addEventListener(e, skip, { passive: true }));
     } else {
       if (intro) intro.remove();
-      if (himg.complete) requestAnimationFrame(entrance); else { let go = false; const f = () => { if (!go) { go = true; entrance(); } }; himg.addEventListener('load', f, { once: true }); setTimeout(f, 1200); }
+      heroIn(gsap.timeline(), 0.1);
     }
-
-    const fr = edges(hframe);
-    const G = 1.3;   // when the card starts growing back
-    const tl = gsap.timeline({
-      defaults: { ease: 'none' },
-      scrollTrigger: { trigger: hero, start: 'top top', end: () => '+=' + Math.round(innerHeight * 3.4), pin: true, scrub: 0.6, invalidateOnRefresh: true, anticipatePin: 1 }
-    });
-    // 1 · full-bleed → framed card; the title stays above it
-    tl.fromTo(clip, { clipPath: 'inset(0px 0px 0px 0px)' }, { clipPath: () => { const r = rect(); return `inset(${r.y}px ${r.x}px ${innerHeight - r.y - r.h}px ${r.x}px)`; }, duration: 1, ease: 'power1.inOut' }, 0)
-      .fromTo(himg, { scale: 1 }, { scale: () => imgScale(), duration: 1, ease: 'power1.inOut', immediateRender: false }, 0)
-      .to(hint, { opacity: 0, duration: 0.2 }, 0)
-      .to(hshade, { opacity: 0.2, duration: 0.8 }, 0)
-      .set(hframe, { opacity: 1 }, 0.45)
-      .fromTo(fr[0], { scaleX: 0 }, { scaleX: 1, duration: 0.13 }, 0.45)
-      .fromTo(fr[1], { scaleY: 0 }, { scaleY: 1, duration: 0.17 }, 0.58)
-      .fromTo(fr[2], { scaleX: 0 }, { scaleX: 1, duration: 0.13 }, 0.75)
-      .fromTo(fr[3], { scaleY: 0 }, { scaleY: 1, duration: 0.17 }, 0.88)
-    // 2 · back to full screen; 27 crossfades into 28 (you stood up and looked out)
-      .to(hframe, { opacity: 0, duration: 0.2 }, G)
-      .to(hhead, { opacity: 0, y: -40, duration: 0.4 }, G)
-      .to(clip, { clipPath: 'inset(0px 0px 0px 0px)', duration: 1, ease: 'power1.inOut' }, G)
-      .to(himg, { scale: 1.04, duration: 1, ease: 'power1.inOut' }, G);
-    if (view) {
-      // 3 · the view: pan right → left over the treetops, headline at the bottom
-      tl.fromTo(view, { opacity: 0 }, { opacity: 1, duration: 0.7 }, G + 0.15)
-        .fromTo(vimg, { x: 0 }, { x: () => Math.max(0, vimg.offsetWidth - innerWidth), duration: 2.3 }, G + 0.1)
-        .fromTo(vshade, { opacity: 0 }, { opacity: 1, duration: 0.4 }, G + 0.85);
-      if (vsh) {
-        const lab = $('.sh-label', vsh), lns = $$('.ln > span', vsh), rule = $('.sh-rule', vsh);
-        tl.fromTo(lab, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.25, ease: 'power2.out' }, G + 0.95)
-          .fromTo(lns, { yPercent: 105, y: 0 }, { yPercent: 0, duration: 0.3, stagger: 0.06, ease: 'power3.out' }, G + 1.0)
-          .fromTo(rule, { scaleX: 0 }, { scaleX: 1, duration: 0.3, ease: 'power2.inOut' }, G + 1.15);
-      }
-      if (vsub) tl.fromTo(vsub, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' }, G + 1.3);
-    }
-    tl.to({}, { duration: 0.25 }, G + 2.4);
   }
 
   /* ---------------- the home: pinned; the framed photo rises away while the next frame draws ---------------- */
@@ -375,85 +397,157 @@
     });
   }
 
+  function initMenu() {
+    const menu = $('#menu'), btn = $('.menu-btn');
+    if (!menu || !btn) return;
+    const closeBtn = $('.menu-close', menu), links = $$('.menu-link', menu);
+    const anim = () => !!window.gsap && !reduce;
+    let isOpen = false;
+    const open = () => {
+      if (isOpen) return; isOpen = true;
+      menu.hidden = false; btn.setAttribute('aria-expanded', 'true');
+      root.classList.add('menu-open'); if (lenis) lenis.stop();
+      if (anim()) {
+        gsap.fromTo(menu, { opacity: 0 }, { opacity: 1, duration: 0.35, ease: 'power2.out' });
+        gsap.fromTo(links, { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.55, stagger: 0.05, ease: 'power3.out', delay: 0.08 });
+      }
+      closeBtn.focus();
+    };
+    const close = then => {
+      if (!isOpen) return; isOpen = false;
+      btn.setAttribute('aria-expanded', 'false');
+      const done = () => { menu.hidden = true; root.classList.remove('menu-open'); if (lenis) lenis.start(); if (then) then(); else btn.focus(); };
+      if (anim()) gsap.to(menu, { opacity: 0, duration: 0.25, ease: 'power2.in', onComplete: done }); else done();
+    };
+    btn.addEventListener('click', open);
+    closeBtn.addEventListener('click', () => close());
+    links.forEach(a => a.addEventListener('click', e => { e.preventDefault(); const h = a.getAttribute('href'); close(() => scrollToHash(h)); }));
+    menu.addEventListener('keydown', e => {
+      if (e.key === 'Escape') { e.preventDefault(); close(); }
+      else if (e.key === 'Tab') {
+        const f = [closeBtn, ...links], first = f[0], last = f[f.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    });
+  }
+
   function initGallery() {
-    const data = $('#gallery-data'), lb = $('.lightbox'), strip = $('.gal-strip');
-    if (!data || !lb || !strip) return;
+    const data = $('#gallery-data'), lb = $('.lightbox'), cf = $('.cf');
+    if (!data || !lb || !cf) return;
     const photos = JSON.parse(data.textContent);
-    const track = $('.lb-track', lb), count = $('.lb-count', lb), closeBtn = $('.lb-close', lb);
-    track.innerHTML = photos.map((p, i) => `<figure class="lb-slide" data-i="${i}"><img data-src="${p.src}" alt="${p.alt.replace(/"/g, '&quot;')}" width="${p.w}" height="${p.h}" decoding="async"></figure>`).join('');
-    const slides = $$('.lb-slide', track);
-    let idx = 0, opener = null;
-    const load = i => { const im = slides[i] && $('img', slides[i]); if (im && !im.src) im.src = im.dataset.src; };
-    const setCount = i => { idx = i; count.textContent = `${String(i + 1).padStart(2, '0')} / ${String(photos.length).padStart(2, '0')}`; load(i - 1); load(i); load(i + 1); };
-    const goTo = (i, smoothScroll = true) => {
+
+    /* ---- the carousel: native scroll-snap (momentum on iPhone), the coverflow look follows the scroll position ---- */
+    const track = $('.cf-track', cf), slides = $$('.cf-slide', track);
+    const cards = slides.map(sl => $('.cf-card', sl)), dims = slides.map(sl => $('.cf-dim', sl));
+    const segs = $$('.cf-seg'), now = $('.cf-now'), en = $('.cf-en'), he = $('.cf-he'), cap = $('.cf-cap');
+    const last = slides.length - 1;
+    let W = 1, active = 0, ticking = 0;
+    const prevA = slides.map(() => -1);
+    const measure = () => { W = slides[0].offsetWidth || 1; };
+    const setActive = i => {
+      if (i === active) return;
+      slides[active].classList.remove('is-on'); if (segs[active]) segs[active].classList.remove('is-on');
+      active = i;
+      slides[i].classList.add('is-on'); if (segs[i]) segs[i].classList.add('is-on');
+      now.textContent = pad2(i + 1); en.textContent = photos[i].latin; he.textContent = photos[i].he;
+      if (!reduce && cap.animate) cap.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 450, easing: 'cubic-bezier(.22,.9,.3,1)' });
+    };
+    const render = () => {
+      ticking = 0;
+      const p = track.scrollLeft / W;
+      for (let i = 0; i <= last; i++) {
+        const d = i - p, a = Math.min(1, Math.abs(d));
+        if (a === 1 && prevA[i] === 1) continue;
+        prevA[i] = a;
+        const sc = 1 - 0.22 * a, tx = -Math.sign(d) * a * W * 0.05;   // neighbours: 78%, 35%, pulled in a touch so they peek
+        cards[i].style.transform = `translate3d(${tx.toFixed(1)}px,0,0) scale(${sc.toFixed(4)})`;
+        cards[i].style.opacity = (1 - 0.65 * a).toFixed(3);
+        dims[i].style.opacity = (0.4 * a).toFixed(3);
+      }
+      setActive(Math.max(0, Math.min(last, Math.round(p))));
+    };
+    const go = (i, smooth = true) => { i = Math.max(0, Math.min(last, i)); track.scrollTo({ left: i * W, behavior: smooth && !reduce ? 'smooth' : 'auto' }); };
+    track.addEventListener('scroll', () => { if (!ticking) ticking = requestAnimationFrame(render); }, { passive: true });
+    addEventListener('resize', () => { measure(); prevA.fill(-1); go(active, false); render(); });
+    measure(); render();
+
+    cards.forEach((c, i) => c.addEventListener('click', () => {
+      if (track.dataset.dragged) return;
+      if (i === active) openLb(i, c); else go(i);
+    }));
+    segs.forEach((b, i) => b.addEventListener('click', () => go(i)));
+    $('.cf-prev', cf).addEventListener('click', () => go(active - 1));
+    $('.cf-next', cf).addEventListener('click', () => go(active + 1));
+    track.addEventListener('keydown', e => {
+      if (e.key === 'ArrowRight') { e.preventDefault(); go(active + 1); }   // laid out LTR: the next photo is on the right
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); go(active - 1); }
+      else if (e.key === 'Enter' && e.target === track) openLb(active, cards[active]);
+    });
+    // mouse drag on desktop (touch stays native)
+    let down = null;
+    track.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse' || e.button !== 0) return; down = { x: e.clientX, s: track.scrollLeft, moved: false, v: 0, lx: e.clientX, lt: performance.now() }; });
+    addEventListener('pointermove', e => {
+      if (!down) return;
+      const dx = e.clientX - down.x, t = performance.now();
+      if (!down.moved && Math.abs(dx) > 6) { down.moved = true; track.classList.add('is-drag'); track.dataset.dragged = '1'; }
+      if (down.moved) { track.scrollLeft = down.s - dx; down.v = (e.clientX - down.lx) / Math.max(1, t - down.lt); down.lx = e.clientX; down.lt = t; }
+    });
+    addEventListener('pointerup', () => {
+      if (!down) return;
+      const d = down; down = null;
+      if (!d.moved) return;
+      track.classList.remove('is-drag');
+      go(Math.round((track.scrollLeft - d.v * 220) / W));
+      setTimeout(() => { delete track.dataset.dragged; }, 50);
+    });
+
+    /* ---- the full-screen lightbox ---- */
+    const lbTrack = $('.lb-track', lb), count = $('.lb-count', lb), closeBtn = $('.lb-close', lb);
+    lbTrack.innerHTML = photos.map((p, i) => `<figure class="lb-slide" data-i="${i}"><img data-src="${p.src}" alt="${p.alt.replace(/"/g, '&quot;')}" width="${p.w}" height="${p.h}" decoding="async"></figure>`).join('');
+    const lbSlides = $$('.lb-slide', lbTrack);
+    let idx = 0, opener = null, raf = 0;
+    const load = i => { const im = lbSlides[i] && $('img', lbSlides[i]); if (im && !im.src) im.src = im.dataset.src; };
+    const setCount = i => { idx = i; count.textContent = `${pad2(i + 1)} / ${pad2(photos.length)}`; load(i - 1); load(i); load(i + 1); };
+    const lbGo = (i, smoothScroll = true) => {
       i = Math.max(0, Math.min(photos.length - 1, i));
-      slides[i].scrollIntoView({ behavior: smoothScroll && !reduce ? 'smooth' : 'auto', inline: 'center', block: 'nearest' });
+      lbTrack.scrollTo({ left: i * lbTrack.clientWidth, behavior: smoothScroll && !reduce ? 'smooth' : 'auto' });
       setCount(i);
     };
-    let raf = 0;
-    track.addEventListener('scroll', () => {
+    lbTrack.addEventListener('scroll', () => {
       cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        const w = track.clientWidth, i = Math.round(Math.abs(track.scrollLeft) / w);
-        if (i !== idx) setCount(i);
-      });
+      raf = requestAnimationFrame(() => { const i = Math.round(lbTrack.scrollLeft / lbTrack.clientWidth); if (i !== idx) setCount(i); });
     }, { passive: true });
-    const open = (i, from) => {
+    function openLb(i, from) {
       opener = from || document.activeElement;
       lb.hidden = false;
       root.classList.add('lb-open'); document.body.classList.add('lb-open');
       if (lenis) lenis.stop();
       setCount(i);
-      requestAnimationFrame(() => { goTo(i, false); closeBtn.focus(); });
+      requestAnimationFrame(() => { lbGo(i, false); closeBtn.focus(); });
       updatePill();
-    };
-    const close = () => {
+    }
+    const closeLb = () => {
       lb.hidden = true;
       root.classList.remove('lb-open'); document.body.classList.remove('lb-open');
       if (lenis) lenis.start();
-      if (opener) opener.focus();
+      go(idx, false);   // the carousel follows to where the lightbox was left
+      if (cards[idx]) cards[idx].focus({ preventScroll: true }); else if (opener) opener.focus();
       updatePill();
     };
-    $$('.gal-item', strip).forEach(b => b.addEventListener('click', () => { if (!strip.dataset.dragged) open(+b.dataset.i, b); }));
-    closeBtn.addEventListener('click', close);
-    $('.lb-prev', lb).addEventListener('click', () => goTo(idx - 1));
-    $('.lb-next', lb).addEventListener('click', () => goTo(idx + 1));
+    closeBtn.addEventListener('click', closeLb);
+    $('.lb-prev', lb).addEventListener('click', () => lbGo(idx - 1));
+    $('.lb-next', lb).addEventListener('click', () => lbGo(idx + 1));
     lb.addEventListener('keydown', e => {
-      if (e.key === 'Escape') { e.preventDefault(); close(); }
-      else if (e.key === 'ArrowLeft') goTo(idx + 1);       // RTL: left = next
-      else if (e.key === 'ArrowRight') goTo(idx - 1);
+      if (e.key === 'Escape') { e.preventDefault(); closeLb(); }
+      else if (e.key === 'ArrowRight') lbGo(idx + 1);
+      else if (e.key === 'ArrowLeft') lbGo(idx - 1);
       else if (e.key === 'Tab') {
         const f = $$('button', lb).filter(b => b.offsetParent !== null);
-        const first = f[0], last = f[f.length - 1];
-        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        const first = f[0], lastB = f[f.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); lastB.focus(); }
+        else if (!e.shiftKey && document.activeElement === lastB) { e.preventDefault(); first.focus(); }
       }
-    });
-
-    // strip: arrows + mouse drag (touch stays native)
-    const step = () => ($('.gal-item', strip).offsetWidth + 36);
-    $$('.gal-arrow').forEach(b => b.addEventListener('click', () => strip.scrollBy({ left: (b.dataset.dir === 'next' ? -1 : 1) * step(), behavior: 'smooth' })));
-    let down = null;
-    strip.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse') return; down = { x: e.clientX, s: strip.scrollLeft, moved: false }; });
-    addEventListener('pointermove', e => {
-      if (!down) return;
-      const dx = e.clientX - down.x;
-      if (!down.moved && Math.abs(dx) > 6) { down.moved = true; strip.classList.add('is-drag'); strip.dataset.dragged = '1'; }
-      if (down.moved) strip.scrollLeft = down.s - dx;
-    });
-    addEventListener('pointerup', () => {
-      if (!down) return;
-      const moved = down.moved; down = null;
-      if (moved) {
-        const s = strip.scrollLeft, w = step();
-        strip.classList.remove('is-drag');
-        strip.scrollTo({ left: Math.round(s / w) * w, behavior: 'smooth' });
-        setTimeout(() => { delete strip.dataset.dragged; }, 50);
-      }
-    });
-    strip.addEventListener('keydown', e => {
-      if (e.key === 'ArrowLeft') { e.preventDefault(); strip.scrollBy({ left: -step(), behavior: 'smooth' }); }
-      if (e.key === 'ArrowRight') { e.preventDefault(); strip.scrollBy({ left: step(), behavior: 'smooth' }); }
     });
   }
 })();
