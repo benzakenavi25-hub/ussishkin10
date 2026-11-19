@@ -41,7 +41,7 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-tap-highlight-color: transparent;
 }
-img { display: block; max-width: 100%; }
+img { display: block; max-width: 100%; height: auto; }   /* never stretch a photo, even if a stylesheet is stale */
 a { color: inherit; }
 button { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--brass); outline-offset: 3px; }
