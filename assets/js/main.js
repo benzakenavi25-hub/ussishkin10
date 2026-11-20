@@ -519,6 +519,7 @@
       raf = requestAnimationFrame(() => { const i = Math.round(lbTrack.scrollLeft / lbTrack.clientWidth); if (i !== idx) setCount(i); });
     }, { passive: true });
     function openLb(i, from) {
+      if (window.goatcounter && goatcounter.count) goatcounter.count({ path: "gallery-open", title: "gallery-open", event: true });
       opener = from || document.activeElement;
       lb.hidden = false;
       root.classList.add('lb-open'); document.body.classList.add('lb-open');

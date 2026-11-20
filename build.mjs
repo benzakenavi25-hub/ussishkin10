@@ -358,9 +358,9 @@ function sections() {
   ${head(L.visit, v.title)}
   ${v.sub ? `<p class="visit-sub" data-fade>${nums(v.sub)}</p>` : ''}
   <div class="slots">
-    ${(v.slots || []).map(s => `<a class="slot" data-fade href="${esc(waLink(v.message.replace('{slot}', s)))}" target="_blank" rel="noopener"><span>${esc(s)}</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></a>`).join('\n    ')}
+    ${(v.slots || []).map((s, i) => `<a class="slot" data-goatcounter-click="slot-${i + 1}" data-fade href="${esc(waLink(v.message.replace('{slot}', s)))}" target="_blank" rel="noopener"><span>${esc(s)}</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></a>`).join('\n    ')}
   </div>
-  <a class="btn-brass" data-fade href="${telLink()}">לשיחה עם ${esc(a.firstName || a.name)}</a>
+  <a class="btn-brass" data-fade data-goatcounter-click="call-amir" href="${telLink()}">לשיחה עם ${esc(a.firstName || a.name)}</a>
 </section>` : '';
 
   S.agent = a ? `
@@ -368,12 +368,13 @@ function sections() {
   <p class="agent-name">${esc(a.name)}</p>
   <p class="agent-meta">${[esc(a.office), a.license ? `רישיון <bdi>${esc(a.license)}</bdi>` : '', a.exclusive ? '<span class="brass">בבלעדיות</span>' : ''].filter(Boolean).join(' · ')}</p>
   <div class="agent-actions">
-    <a class="agent-phone num" href="${telLink()}" dir="ltr">${esc(a.phone)}</a>
-    <a class="btn-outline" href="${esc(waLink(d.visit ? d.visit.message.replace(' מועד נוח לי: {slot}.', '') : ''))}" target="_blank" rel="noopener">${WA_ICON}<span>וואטסאפ</span></a>
+    <a class="agent-phone num" data-goatcounter-click="call-amir" href="${telLink()}" dir="ltr">${esc(a.phone)}</a>
+    <a class="btn-outline" data-goatcounter-click="wa-amir" href="${esc(waLink(d.visit ? d.visit.message.replace(' מועד נוח לי: {slot}.', '') : ''))}" target="_blank" rel="noopener">${WA_ICON}<span>וואטסאפ</span></a>
   </div>
 </section>
 <footer class="footer">
   ${d.trustLine ? `<p class="trust">${esc(d.trustLine)}</p>` : ''}
+  <p class="privacy">האתר משתמש ב-GoatCounter לספירת צפיות ולחיצות באופן אנונימי, ללא עוגיות.</p>
   ${d.credit ? `<p class="credit" lang="en">${esc(d.credit)}</p>` : ''}
 </footer>` : '';
   return S;
@@ -392,7 +393,7 @@ const vars = {
   robots: d.indexable ? '' : '<meta name="robots" content="noindex, nofollow">',
   preload: `<link rel="preload" as="image" imagesrcset="${srcset(K.hero)}" imagesizes="${coverSizes(K.hero)}" fetchpriority="high">`,
   brand: esc(d.title),
-  cta: d.agent && d.visit ? `<a class="pill is-hidden" href="${esc(waLink(d.visit.message.replace(' מועד נוח לי: {slot}.', '')))}" target="_blank" rel="noopener">${WA_ICON}<span>לתיאום ביקור</span></a>` : '',
+  cta: d.agent && d.visit ? `<a class="pill is-hidden" data-goatcounter-click="wa-amir" href="${esc(waLink(d.visit.message.replace(' מועד נוח לי: {slot}.', '')))}" target="_blank" rel="noopener">${WA_ICON}<span>לתיאום ביקור</span></a>` : '',
   v: ver,
   ...Object.fromEntries(Object.entries(S).map(([k, v]) => ['section_' + k, v]))
 };

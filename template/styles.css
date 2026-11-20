@@ -353,3 +353,5 @@ html.js:not(.rm) .pc { opacity: 0; }
   .slots { grid-template-columns: 1fr; }
   .btn-brass { width: auto; }
 }
+
+.privacy { color: var(--fg2); font-size: 12px; margin-top: 8px; }
